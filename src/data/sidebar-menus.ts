@@ -32,10 +32,24 @@ const sidebar_menu: Array<ISidebarMenus> = [
     ],
   },
   {
-    id: 3,
+    id: 31,
     icon: Categories,
     link: "/category",
     title: "Category",
+    subMenus: [
+      { title: "Category", link: "/category" },
+      { title: "Category Type", link: "/category-type" },
+    ],
+  },
+  {
+    id: 3,
+    icon: Categories,
+    link: "/course",
+    title: "Course",
+    subMenus: [
+      { title: "Course", link: "/course" },
+      { title: "Course Material", link: "/course/course-material" },
+    ],
   },
   {
     id: 4,

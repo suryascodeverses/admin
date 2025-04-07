@@ -20,7 +20,7 @@ interface CourseMaterial {
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const CourseMaterialManagement: React.FC = () => {
+const FreeResourceMaterialManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
@@ -248,4 +248,4 @@ const CourseMaterialManagement: React.FC = () => {
   );
 };
 
-export default CourseMaterialManagement;
+export default FreeResourceMaterialManagement;

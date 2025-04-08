@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-
+import { notifySuccess, notifyError } from "@/utils/toast"; // Adjust path as needed
 
 interface Course {
   id: string;
@@ -29,24 +29,40 @@ const CourseMaterialManagement: React.FC = () => {
   console.log(selectedCourseId);
 
   const fetchCourses = async () => {
-    const res = await fetch(`${base_api}/api/courses`);
-    const data = await res.json();
-    if (data.success) setCourses(data.data);
+    try {
+      const res = await fetch(`${base_api}/api/courses`);
+      const data = await res.json();
+      if (data.success) {
+        setCourses(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch courses.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching courses.");
+    }
   };
 
   const fetchMaterials = async () => {
     if (!selectedCourseId) return;
-    const res = await fetch(
-      `${base_api}/api/courses/material${
-        selectedCourseId !== "" ? `/courseId/${selectedCourseId}` : ""
-      }`
-    );
-    const data = await res.json();
-    if (data.success) {
-      const filtered = data.data.filter(
-        (mat: CourseMaterial) => mat.courseId === selectedCourseId
+    try {
+      const res = await fetch(
+        `${base_api}/api/courses/material${
+          selectedCourseId !== "" ? `/courseId/${selectedCourseId}` : ""
+        }`
       );
-      setMaterials(filtered);
+      const data = await res.json();
+      if (data.success) {
+        const filtered = data.data.filter(
+          (mat: CourseMaterial) => mat.courseId === selectedCourseId
+        );
+        setMaterials(filtered);
+      } else {
+        notifyError(data.message || "Failed to fetch materials.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching course materials.");
     }
   };
 
@@ -73,29 +89,41 @@ const CourseMaterialManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form || !mediaFile || !selectedCourseId) return;
+    if (!form || !mediaFile || !selectedCourseId) {
+      notifyError("Please complete all required fields.");
+      return;
+    }
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (value && key !== "id" && key !== "media" && key !== "courseId") {
-        formData.append(key, value);
+    try {
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (value && key !== "id" && key !== "media" && key !== "courseId") {
+          formData.append(key, value);
+        }
+      });
+      formData.append("media", mediaFile);
+      formData.append("courseId", selectedCourseId);
+
+      const res = await fetch(
+        `${base_api}/api/courses/material${form.id ? `/${form.id}` : "/add"}`,
+        {
+          method: form.id ? "PUT" : "POST",
+          body: formData,
+        }
+      );
+
+      const result = await res.json();
+      if (res.ok) {
+        notifySuccess(`Material ${form.id ? "updated" : "added"} successfully!`);
+        setForm(null);
+        setMediaFile(null);
+        fetchMaterials();
+      } else {
+        notifyError(result.message || "Failed to submit material.");
       }
-    });
-    formData.append("media", mediaFile);
-    formData.append("courseId", selectedCourseId);
-
-    const res = await fetch(
-      `${base_api}/api/courses/material${form.id ? `/${form.id}` : "/add"}`,
-      {
-        method: form.id ? "PUT" : "POST",
-        body: formData,
-      }
-    );
-
-    if (res.ok) {
-      setForm(null);
-      setMediaFile(null);
-      fetchMaterials();
+    } catch (error) {
+      console.error(error);
+      notifyError("Error submitting course material.");
     }
   };
 
@@ -104,10 +132,22 @@ const CourseMaterialManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`${base_api}/api/courses/material/${id}`, { method: "DELETE" });
-    fetchMaterials();
+    try {
+      const res = await fetch(`${base_api}/api/courses/material/${id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (res.ok) {
+        notifySuccess("Material deleted successfully.");
+        fetchMaterials();
+      } else {
+        notifyError(result.message || "Failed to delete material.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error deleting course material.");
+    }
   };
-
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">

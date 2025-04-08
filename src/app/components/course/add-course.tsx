@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
+import { notifySuccess, notifyError } from "@/utils/toast"; // adjust if needed
 
 interface Course {
   id: string;
@@ -31,24 +32,51 @@ const CourseManagement: React.FC = () => {
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
 
   const fetchCourses = async () => {
-    const res = await fetch(`${base_api}/api/courses`);
-    const data = await res.json();
-    if (data.success) setCourses(data.data);
+    try {
+      const res = await fetch(`${base_api}/api/courses`);
+      const data = await res.json();
+      if (data.success) {
+        setCourses(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch courses.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching courses.");
+    }
   };
 
   const fetchCategoryTypes = async () => {
-    const res = await fetch(`${base_api}/api/category-types`);
-    const data = await res.json();
-    if (data.success) setCategoryTypes(data.data);
+    try {
+      const res = await fetch(`${base_api}/api/category-types`);
+      const data = await res.json();
+      if (data.success) {
+        setCategoryTypes(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch category types.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching category types.");
+    }
   };
 
   const fetchCategories = async () => {
     if (!form.categoryTypeId) return;
-    const res = await fetch(
-      `${base_api}/api/categories/category-by-type/${form.categoryTypeId}`
-    );
-    const data = await res.json();
-    if (data.success) setCategories(data.data);
+    try {
+      const res = await fetch(
+        `${base_api}/api/categories/category-by-type/${form.categoryTypeId}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch categories.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching categories.");
+    }
   };
 
   useEffect(() => {
@@ -76,17 +104,27 @@ const CourseManagement: React.FC = () => {
       : `${base_api}/api/courses/add`;
     const method = form.id ? "PUT" : "POST";
 
-    const res = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
-      setForm({});
-      fetchCourses();
+      const result = await res.json();
+
+      if (res.ok) {
+        notifySuccess(`Course ${form.id ? "updated" : "added"} successfully.`);
+        setForm({});
+        fetchCourses();
+      } else {
+        notifyError(result.message || "Failed to submit course.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error submitting course.");
     }
   };
 
@@ -95,8 +133,21 @@ const CourseManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`${base_api}/api/courses/${id}`, { method: "DELETE" });
-    fetchCourses();
+    try {
+      const res = await fetch(`${base_api}/api/courses/${id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (res.ok) {
+        notifySuccess("Course deleted successfully.");
+        fetchCourses();
+      } else {
+        notifyError(result.message || "Failed to delete course.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error deleting course.");
+    }
   };
 
   return (

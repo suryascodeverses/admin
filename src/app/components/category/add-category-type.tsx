@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { notifySuccess, notifyError } from "@/utils/toast"; // adjust path if needed
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -9,7 +10,6 @@ const AddCategoryType = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedName, setEditedName] = useState("");
 
-  // Fetch all category types on mount
   useEffect(() => {
     fetchTypes();
   }, []);
@@ -18,9 +18,14 @@ const AddCategoryType = () => {
     try {
       const res = await fetch(`${base_api}/api/category-types/`);
       const data = await res.json();
-      if (res.ok) setAllTypes(data.data);
+      if (res.ok) {
+        setAllTypes(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch category types");
+      }
     } catch (err) {
-      console.error("Failed to fetch category types:", err);
+      console.error("Fetch error:", err);
+      notifyError("Something went wrong while fetching category types.");
     }
   };
 
@@ -36,32 +41,37 @@ const AddCategoryType = () => {
 
   const handleDeleteTypeInput = (index: number) => {
     if (typeList.length > 1) {
-      setTypeList(typeList.filter((_, i) => i !== index));
+      const updated = typeList.filter((_, i) => i !== index);
+      setTypeList(updated);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validTypes = typeList.filter((type) => type.trim() !== "");
-    if (validTypes.length === 0) return;
+    if (validTypes.length === 0) {
+      notifyError("Please enter at least one valid category type.");
+      return;
+    }
 
     try {
-      const response = await fetch(`${base_api}/api/category-types/add-all`, {
+      const res = await fetch(`${base_api}/api/category-types/add-all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ types: validTypes }),
       });
 
-      const result = await response.json();
-      if (response.ok) {
-        console.log("Submitted:", result);
+      const result = await res.json();
+      if (res.ok) {
+        notifySuccess("Category types added successfully!");
         setTypeList([""]);
         fetchTypes();
       } else {
-        console.error("Submission failed:", result.message);
+        notifyError(result.message || "Failed to add category types.");
       }
-    } catch (error) {
-      console.error("Network error:", error);
+    } catch (err) {
+      console.error("Submit error:", err);
+      notifyError("Something went wrong while adding category types.");
     }
   };
 
@@ -71,7 +81,10 @@ const AddCategoryType = () => {
   };
 
   const handleUpdate = async (id: number) => {
-    if (!editedName.trim()) return;
+    if (!editedName.trim()) {
+      notifyError("Category type name cannot be empty.");
+      return;
+    }
 
     try {
       const res = await fetch(`${base_api}/api/category-types/${id}`, {
@@ -80,14 +93,17 @@ const AddCategoryType = () => {
         body: JSON.stringify({ name: editedName }),
       });
 
-      const data = await res.json();
+      const result = await res.json();
       if (res.ok) {
-        console.log("Updated:", data);
+        notifySuccess("Category type updated successfully!");
         setEditingId(null);
         fetchTypes();
+      } else {
+        notifyError(result.message || "Failed to update category type.");
       }
     } catch (err) {
-      console.error("Update failed:", err);
+      console.error("Update error:", err);
+      notifyError("Something went wrong while updating category type.");
     }
   };
 
@@ -97,13 +113,16 @@ const AddCategoryType = () => {
         method: "DELETE",
       });
 
-      const data = await res.json();
+      const result = await res.json();
       if (res.ok) {
-        console.log("Deleted:", data);
+        notifySuccess("Category type deleted successfully!");
         fetchTypes();
+      } else {
+        notifyError(result.message || "Failed to delete category type.");
       }
     } catch (err) {
-      console.error("Delete failed:", err);
+      console.error("Delete error:", err);
+      notifyError("Something went wrong while deleting category type.");
     }
   };
 

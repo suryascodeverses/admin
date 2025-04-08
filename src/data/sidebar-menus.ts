@@ -37,8 +37,8 @@ const sidebar_menu: Array<ISidebarMenus> = [
     link: "/category",
     title: "Category",
     subMenus: [
-      { title: "Category", link: "/category" },
       { title: "Category Type", link: "/category-type" },
+      { title: "Category", link: "/category" },
     ],
   },
   {
@@ -58,7 +58,7 @@ const sidebar_menu: Array<ISidebarMenus> = [
     title: "Free Resources",
     subMenus: [
       { title: "Free Resources", link: "/free-resources" },
-      { title: "Free Resources Material", link: "/course/free-resources-material" },
+      { title: "Free Resources Material", link: "/free-resources/free-resources-material" },
     ],
   },
   {

@@ -1,6 +1,9 @@
 "use client";
+import { notifyError, notifySuccess } from "@/utils/toast";
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
+// Add these if not already available
+// import { notifySuccess, notifyError } from "@/utils/notify"; // Adjust this import path to your project
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -8,13 +11,18 @@ type Category = {
   name: string;
   categoryTypeId: string;
 };
+type CategoryType = {
+  id: string;
+  name: string;
+};
 type CategoryField = keyof Category;
+
 const CategoryForm = () => {
   const [categoryList, setCategoryList] = useState([
     { name: "", categoryTypeId: "" },
   ]);
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({ name: "", categoryTypeId: "" });
 
@@ -27,9 +35,14 @@ const CategoryForm = () => {
     try {
       const res = await fetch(`${base_api}/api/category-types/`);
       const data = await res.json();
-      if (res.ok) setCategoryTypes(data.data);
+      if (res.ok) {
+        setCategoryTypes(data.data);
+      } else {
+        notifyError("Failed to load category types.");
+      }
     } catch (err) {
       console.error("Failed to fetch category types:", err);
+      notifyError("An error occurred while fetching category types.");
     }
   };
 
@@ -37,9 +50,14 @@ const CategoryForm = () => {
     try {
       const res = await fetch(`${base_api}/api/categories/`);
       const data = await res.json();
-      if (res.ok) setAllCategories(data.data);
+      if (res.ok) {
+        setAllCategories(data.data);
+      } else {
+        notifyError("Failed to load categories.");
+      }
     } catch (err) {
       console.error("Failed to fetch categories:", err);
+      notifyError("An error occurred while fetching categories.");
     }
   };
 
@@ -68,7 +86,11 @@ const CategoryForm = () => {
     const validCategories = categoryList.filter(
       (c) => c.name.trim() && c.categoryTypeId.trim()
     );
-    if (validCategories.length === 0) return;
+
+    if (validCategories.length === 0) {
+      notifyError("Please fill in all fields before submitting.");
+      return;
+    }
 
     try {
       const res = await fetch(`${base_api}/api/categories/add-all`, {
@@ -81,11 +103,13 @@ const CategoryForm = () => {
       if (res.ok) {
         setCategoryList([{ name: "", categoryTypeId: "" }]);
         fetchCategories();
+        notifySuccess("Categories added successfully!");
       } else {
-        console.error("Submission failed:", result.message);
+        notifyError(result.message || "Failed to add categories.");
       }
     } catch (err) {
       console.error("Submission error:", err);
+      notifyError("An error occurred while submitting categories.");
     }
   };
 
@@ -98,7 +122,10 @@ const CategoryForm = () => {
   };
 
   const handleUpdate = async (id: number) => {
-    if (!editData.name.trim() || !editData.categoryTypeId.trim()) return;
+    if (!editData.name.trim() || !editData.categoryTypeId.trim()) {
+      notifyError("Both fields are required.");
+      return;
+    }
 
     try {
       const res = await fetch(`${base_api}/api/categories/edit/${id}`, {
@@ -111,9 +138,13 @@ const CategoryForm = () => {
       if (res.ok) {
         setEditingId(null);
         fetchCategories();
+        notifySuccess("Category updated successfully!");
+      } else {
+        notifyError(data.message || "Failed to update category.");
       }
     } catch (err) {
       console.error("Update failed:", err);
+      notifyError("An error occurred while updating the category.");
     }
   };
 
@@ -124,12 +155,17 @@ const CategoryForm = () => {
       });
 
       const data = await res.json();
-      if (res.ok) fetchCategories();
+      if (res.ok) {
+        fetchCategories();
+        notifySuccess("Category deleted successfully!");
+      } else {
+        notifyError(data.message || "Failed to delete category.");
+      }
     } catch (err) {
       console.error("Delete failed:", err);
+      notifyError("An error occurred while deleting the category.");
     }
   };
-
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Left: Category Form */}

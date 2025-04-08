@@ -8,13 +8,17 @@ type Category = {
   name: string;
   categoryTypeId: string;
 };
+type CategoryType = {
+  id: string;
+  name: string;
+};
 type CategoryField = keyof Category;
 const CategoryForm = () => {
   const [categoryList, setCategoryList] = useState([
     { name: "", categoryTypeId: "" },
   ]);
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({ name: "", categoryTypeId: "" });
 

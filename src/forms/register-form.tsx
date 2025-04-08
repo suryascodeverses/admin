@@ -35,7 +35,7 @@ const RegisterForm = () => {
       }
     } else {
       notifySuccess("Register successfully");
-      router.push('/dashboard')
+      router.push('/category')
       reset();
     }
     reset();

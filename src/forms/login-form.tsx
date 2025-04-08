@@ -33,7 +33,7 @@ const LoginForm = () => {
       }
     } else {
       notifySuccess("Login successfully");
-      router.push('/dashboard')
+      router.push('/category')
       reset();
     }
   };

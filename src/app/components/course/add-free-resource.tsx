@@ -1,242 +1,255 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
-import ReactSelect from "react-select";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  video: string;
-  categoryId: string;
-  categoryTypeId: string;
-}
-
-interface CategoryType {
-  id: string;
-  name: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { notifyError, notifySuccess } from "@/utils/toast";
+import { useEffect, useState } from "react";
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const FreeResourceManagement: React.FC = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [form, setForm] = useState<Partial<Course>>({});
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
+type FreeResource = {
+  id?: string;
+  title: string;
+  type: "pdf" | "video";
+};
 
-  const fetchCourses = async () => {
-    const res = await fetch(`${base_api}/api/courses`);
-    const data = await res.json();
-    if (data.success) setCourses(data.data);
-  };
-
-  const fetchCategoryTypes = async () => {
-    const res = await fetch(`${base_api}/api/category-types`);
-    const data = await res.json();
-    if (data.success) setCategoryTypes(data.data);
-  };
-
-  const fetchCategories = async () => {
-    if (!form.categoryTypeId) return;
-    const res = await fetch(
-      `${base_api}/api/categories/category-by-type/${form.categoryTypeId}`
-    );
-    const data = await res.json();
-    if (data.success) setCategories(data.data);
-  };
+export default function FreeResourcesPage() {
+  const [resources, setResources] = useState<FreeResource[]>([
+    { title: "", type: "pdf" },
+  ]);
+  const [savedResources, setSavedResources] = useState<FreeResource[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<FreeResource>({
+    title: "",
+    type: "pdf",
+  });
 
   useEffect(() => {
-    fetchCourses();
-    fetchCategoryTypes();
+    fetchResources();
   }, []);
 
-  useEffect(() => {
-    fetchCategories();
-  }, [form.categoryTypeId]);
+  const fetchResources = async () => {
+    try {
+      const res = await fetch(`${base_api}/api/free-resources`);
+      const data = await res.json();
+      if (res.ok) {
+        setSavedResources(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch resources.");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      notifyError("An error occurred while fetching resources.");
+    }
+  };
+  
+  const handleInputChange = (index: number, field: keyof FreeResource, value: string) => {
+    const updated = [...resources];
+    updated[index][field] = value as any;
+    setResources(updated);
+  };
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleAddRow = () => {
+    setResources([...resources, { title: "", type: "pdf" }]);
+  };
+
+  const handleRemoveRow = (index: number) => {
+    if (resources.length > 1) {
+      setResources(resources.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const endpoint = form.id
-      ? `${base_api}/api/courses/add/${form.id}`
-      : `${base_api}/api/courses/add`;
-    const method = form.id ? "PUT" : "POST";
-
-    const res = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      setForm({});
-      fetchCourses();
+    const valid = resources.filter(r => r.title.trim() && r.type);
+    if (valid.length === 0) {
+      notifyError("Please fill in all required fields.");
+      return;
+    }
+  
+    try {
+      const res = await fetch(`${base_api}/api/free-resources/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify( resources ),
+      });
+  
+      const data = await res.json();
+      if (res.ok) {
+        notifySuccess("Resources added successfully.");
+        setResources([{ title: "", type: "pdf" }]);
+        fetchResources();
+      } else {
+        notifyError(data.message || "Failed to add resources.");
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+      notifyError("An error occurred while submitting resources.");
     }
   };
+  
 
-  const handleEdit = (course: Course) => {
-    setForm(course);
+  const handleEdit = (res: FreeResource) => {
+    setEditingId(res.id || "");
+    setEditData({ title: res.title, type: res.type });
   };
 
+  const handleUpdate = async (id: string) => {
+    try {
+      const res = await fetch(`${base_api}/api/free-resources/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+  
+      const data = await res.json();
+      if (res.ok) {
+        notifySuccess("Resource updated successfully.");
+        setEditingId(null);
+        fetchResources();
+      } else {
+        notifyError(data.message || "Failed to update resource.");
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      notifyError("An error occurred while updating resource.");
+    }
+  };
+  
   const handleDelete = async (id: string) => {
-    await fetch(`${base_api}/api/courses/${id}`, { method: "DELETE" });
-    fetchCourses();
+    try {
+      const res = await fetch(`${base_api}/api/free-resources/${id}`, {
+        method: "DELETE",
+      });
+  
+      const data = await res.json();
+      if (res.ok) {
+        notifySuccess("Resource deleted successfully.");
+        fetchResources();
+      } else {
+        notifyError(data.message || "Failed to delete resource.");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      notifyError("An error occurred while deleting resource.");
+    }
   };
+  
 
   return (
     <div className="grid grid-cols-12 gap-6">
+      {/* Form Section */}
       <div className="col-span-12 lg:col-span-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-8 py-8 rounded-md mb-6"
-        >
-          <h4 className="text-[22px] mb-4">Add / Edit Course</h4>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="title"
-              value={form.title || ""}
-              onChange={handleChange}
-              placeholder="Course Title"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="bg-white p-6 rounded-md shadow">
+            <h3 className="text-lg font-bold mb-4">Add Free Resources</h3>
+            {resources.map((res, i) => (
+              <div key={i} className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Resource title"
+                  className="input input-bordered w-full mb-2"
+                  value={res.title}
+                  onChange={(e) => handleInputChange(i, "title", e.target.value)}
+                />
+                <select
+                  className="select select-bordered w-full mb-2"
+                  value={res.type}
+                  onChange={(e) => handleInputChange(i, "type", e.target.value)}
+                >
+                  <option value="pdf">PDF</option>
+                  <option value="video">Video</option>
+                </select>
+                <div className="flex justify-between">
+                  {i === resources.length - 1 ? (
+                    <button type="button" className="btn btn-outline btn-sm" onClick={handleAddRow}>
+                      + Add Another
+                    </button>
+                  ) : (
+                    <button type="button" className="text-red-500" onClick={() => handleRemoveRow(i)}>
+                      × Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            <button type="submit" className="btn btn-primary w-full mt-4">
+              Submit
+            </button>
           </div>
-          <div className="mb-4">
-            <textarea
-              name="description"
-              value={form.description || ""}
-              onChange={handleChange}
-              placeholder="Course Description"
-              className="textarea textarea-bordered w-full px-4"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="video"
-              value={form.video || ""}
-              onChange={handleChange}
-              placeholder="Video URL"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <ReactSelect
-              className="w-full mb-4"
-              value={
-                categoryTypes.find(
-                  (type) => type.id === form?.categoryTypeId
-                ) && {
-                  value: form?.categoryTypeId,
-                  label: categoryTypes.find(
-                    (type) => type.id === form?.categoryTypeId
-                  )?.name,
-                }
-              }
-              onChange={(selectedOption) =>
-                handleChange({
-                  target: {
-                    name: "categoryTypeId",
-                    value: selectedOption?.value || "",
-                  },
-                } as React.ChangeEvent<HTMLInputElement>)
-              }
-              options={categoryTypes.map((type) => ({
-                value: type.id,
-                label: type.name,
-              }))}
-              placeholder="Select Category Type"
-              isClearable
-            />
-          </div>
-          <div className="mb-4">
-            <ReactSelect
-              className="w-full mb-4"
-              value={
-                categories.find((cat) => cat.id === form?.categoryId) && {
-                  value: form?.categoryId,
-                  label: categories.find((cat) => cat.id === form?.categoryId)
-                    ?.name,
-                }
-              }
-              onChange={(selectedOption) =>
-                handleChange({
-                  target: {
-                    name: "categoryId",
-                    value: selectedOption?.value || "",
-                  },
-                } as React.ChangeEvent<HTMLInputElement>)
-              }
-              options={categories.map((cat) => ({
-                value: cat.id,
-                label: cat.name,
-              }))}
-              placeholder="Select Category"
-              isClearable
-            />
-          </div>
-          <button type="submit" className="tp-btn px-6 py-2">
-            {form.id ? "Update Course" : "Add Course"}
-          </button>
         </form>
       </div>
 
+      {/* List Section */}
       <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">All Courses</h3>
-          {courses.length === 0 ? (
-            <p className="text-gray-500">No courses available.</p>
+        <div className="bg-white p-6 rounded-md shadow">
+          <h3 className="text-xl font-semibold mb-4">All Free Resources</h3>
+          {savedResources.length === 0 ? (
+            <p className="text-gray-500">No free resources available.</p>
           ) : (
             <table className="table w-full">
-              <thead>
+              <thead className="thead-dark">
+                {" "}
                 <tr>
-                  {/* <th className="text-left">Video URL</th> */}
-                  <th className="text-left">Name</th>
-                  <th className="text-left">Actions</th>
-                </tr>
-              </thead>
+                  {" "}
+                  <th scope="col" style={{ width: "50%", textAlign: "start" }}>
+                    Title
+                  </th>{" "}
+                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
+                    Type
+                  </th>{" "}
+                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
+                    Actions
+                  </th>{" "}
+                </tr>{" "}
+              </thead>{" "}
               <tbody>
-                {courses.map((course) => (
-                  <tr key={course.id}>
-                    {/* <td className="text-blue-600 truncate max-w-[180px]">
-                      <a href={course.video} target="_blank" rel="noopener noreferrer">
-                        {course.video}
-                      </a>
-                    </td> */}
-                    <td>{course.title}</td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleEdit(course)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(course.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
+                {savedResources.map((res) => (
+                  <tr key={res.id}>
+                    {editingId === res.id ? (
+                      <>
+                        <td>
+                          <input
+                            type="text"
+                            className="input input-bordered w-full"
+                            value={editData.title}
+                            onChange={(e) =>
+                              setEditData({ ...editData, title: e.target.value })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <select
+                            className="select select-bordered w-full"
+                            value={editData.type}
+                            onChange={(e) =>
+                              setEditData({ ...editData, type: e.target.value as any })
+                            }
+                          >
+                            <option value="pdf">PDF</option>
+                            <option value="video">Video</option>
+                          </select>
+                        </td>
+                        <td className="flex gap-2">
+                          <button className="btn btn-sm btn-success" onClick={() => handleUpdate(res.id!)}>
+                            Save
+                          </button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => setEditingId(null)}>
+                            Cancel
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{res.title}</td>
+                        <td>{res.type}</td>
+                        <td className="flex gap-2">
+                          <button className="btn btn-sm btn-outline" onClick={() => handleEdit(res)}>
+                            Edit
+                          </button>
+                          <button className="btn btn-sm btn-error" onClick={() => handleDelete(res.id!)}>
+                            Delete
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -246,6 +259,4 @@ const FreeResourceManagement: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default FreeResourceManagement;
+}

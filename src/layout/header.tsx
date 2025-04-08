@@ -55,7 +55,7 @@ const Header = ({ setSideMenu }: IProps) => {
 
   return (
     <>
-      <header className="relative z-10 bg-white border-b border-gray border-solid py-5 px-8 pr-8">
+      <header className="relative z-10 bg-white border-b border-gray border-solid py-3 px-8 pr-8">
         <div className="flex justify-between">
           <div className="flex items-center space-x-6 lg:space-x-0">
             <button
@@ -66,7 +66,7 @@ const Header = ({ setSideMenu }: IProps) => {
               <Menu />
             </button>
             <div className="w-[30%] hidden md:block">
-              <form action="#">
+              {/* <form action="#">
                 <div className="w-[250px] relative">
                   <input
                     className="input h-12 w-full pr-[45px]"
@@ -77,7 +77,7 @@ const Header = ({ setSideMenu }: IProps) => {
                     <Search />
                   </button>
                 </div>
-              </form>
+              </form> */}
             </div>
           </div>
 
@@ -89,11 +89,11 @@ const Header = ({ setSideMenu }: IProps) => {
             </div>
             <div className="relative">
               {/* notification area start */}
-              <NotificationArea
+              {/* <NotificationArea
                 nRef={nRef}
                 notificationOpen={notificationOpen}
                 handleNotificationOpen={handleNotificationOpen}
-              />
+              /> */}
               {/* notification area end */}
             </div>
             <div

@@ -14,6 +14,7 @@ interface Counselling {
   media: any;
   categoryId: string;
   categoryTypeId: string;
+  category?: any;
 }
 
 interface CategoryType {

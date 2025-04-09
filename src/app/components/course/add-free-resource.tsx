@@ -186,20 +186,20 @@ export default function FreeResourcesPage() {
           ) : (
             <table className="table w-full">
               <thead className="thead-dark">
-                {" "}
+                
                 <tr>
-                  {" "}
+                  
                   <th scope="col" style={{ width: "50%", textAlign: "start" }}>
                     Title
-                  </th>{" "}
+                  </th>
                   <th scope="col" style={{ width: "25%", textAlign: "start" }}>
                     Type
-                  </th>{" "}
+                  </th>
                   <th scope="col" style={{ width: "25%", textAlign: "start" }}>
                     Actions
-                  </th>{" "}
-                </tr>{" "}
-              </thead>{" "}
+                  </th>
+                </tr>
+              </thead>
               <tbody>
                 {savedResources.map((res) => (
                   <tr key={res.id}>

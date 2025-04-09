@@ -8,6 +8,7 @@ const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const FreeResourceMaterialManagement = () => {
   const [form, setForm] = useState<any>({});
+  const [edit, setEdit] = useState<any>(false);
   const [materials, setMaterials] = useState<any[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
 
@@ -106,10 +107,14 @@ const FreeResourceMaterialManagement = () => {
       setForm({});
       setMediaFile(null);
       fetchMaterials();
+      setEdit(false);
     } else notifyError("Something went wrong");
   };
 
-  const handleEdit = (mat: any) => setForm(mat);
+  const handleEdit = (mat: any) => {
+    setEdit(true);
+    setForm(mat);
+  };
 
   const handleDelete = async (id: string) => {
     const res = await fetch(`${base_api}/api/free-resource-materials/${id}`, {
@@ -191,7 +196,7 @@ const FreeResourceMaterialManagement = () => {
             <input
               type="text"
               name="media"
-              value={form.media.path || ""}
+              value={edit ? form.media?.path : form.media}
               onChange={handleChange}
               placeholder="Video URL"
               className="input input-bordered w-full h-[44px] px-4 mb-4"
@@ -231,10 +236,7 @@ const FreeResourceMaterialManagement = () => {
                 {materials.map((mat) => (
                   <tr key={mat.id}>
                     <td>{mat.title}</td>
-                    <td>
-                      {freeResources.find((r) => r.id === mat.freeResourceId)
-                        ?.title || "-"}
-                    </td>
+                    <td>{mat.materialFreeResource?.title}</td>
                     <td className="flex gap-2">
                       <button
                         className="btn btn-outline-primary btn-sm"

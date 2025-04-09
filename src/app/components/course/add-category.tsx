@@ -228,34 +228,34 @@ const CategoryForm = () => {
             <p className="text-gray-500">No categories available.</p>
           ) : (
             <table className="table table-bordered table-striped mt-3 w-full">
-              {" "}
+              
               <thead className="thead-dark">
-                {" "}
+                
                 <tr>
-                  {" "}
+                  
                   <th scope="col" style={{ width: "50%", textAlign: "start" }}>
                     Name
-                  </th>{" "}
+                  </th>
                   <th scope="col" style={{ width: "25%", textAlign: "start" }}>
                     Type
-                  </th>{" "}
+                  </th>
                   <th scope="col" style={{ width: "25%", textAlign: "start" }}>
                     Actions
-                  </th>{" "}
-                </tr>{" "}
-              </thead>{" "}
+                  </th>
+                </tr>
+              </thead>
               <tbody>
-                {" "}
+                
                 {allCategories.map((cat: any) => (
                   <tr key={cat.id}>
-                    {" "}
+                    
                     {editingId === cat.id ? (
                       <>
-                        {" "}
+                        
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-6 px-0">
-                            {" "}
+                            
                             <input
                               type="text"
                               className="form-control"
@@ -266,13 +266,13 @@ const CategoryForm = () => {
                                   name: e.target.value,
                                 })
                               }
-                            />{" "}
-                          </div>{" "}
-                        </td>{" "}
+                            />
+                          </div>
+                        </td>
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-6 px-0">
-                            {" "}
+                            
                             <ReactSelect
                               className="mb-2"
                               value={
@@ -310,79 +310,79 @@ const CategoryForm = () => {
                                 })
                               }
                             >
-                              {" "}
-                              <option value="">Select type</option>{" "}
+                              
+                              <option value="">Select type</option>
                               {categoryTypes.map((type: any) => (
                                 <option key={type.id} value={type.id}>
-                                  {" "}
-                                  {type.name}{" "}
+                                  
+                                  {type.name}
                                 </option>
-                              ))}{" "}
-                            </select>{" "} */}
-                          </div>{" "}
-                        </td>{" "}
+                              ))}
+                            </select> */}
+                          </div>
+                        </td>
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-6 px-0 d-flex gap-2">
-                            {" "}
+                            
                             <button
                               className="btn btn-success btn-sm mr-2"
                               onClick={() => handleUpdate(cat.id)}
                             >
-                              {" "}
-                              Save{" "}
-                            </button>{" "}
+                              
+                              Save
+                            </button>
                             <button
                               className="btn btn-secondary btn-sm"
                               onClick={() => setEditingId(null)}
                             >
-                              {" "}
-                              Cancel{" "}
-                            </button>{" "}
-                          </div>{" "}
-                        </td>{" "}
+                              
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
                       </>
                     ) : (
                       <>
-                        {" "}
+                        
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-6 px-0">
                             {cat.name}
-                          </div>{" "}
-                        </td>{" "}
+                          </div>
+                        </td>
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-3 px-0">
-                            {" "}
-                            {cat.categoryType?.name || "-"}{" "}
-                          </div>{" "}
-                        </td>{" "}
+                            
+                            {cat.categoryType?.name || "-"}
+                          </div>
+                        </td>
                         <td>
-                          {" "}
+                          
                           <div className="col-12 col-md-3 px-0 d-flex gap-2">
-                            {" "}
+                            
                             <button
                               className="btn btn-outline-primary btn-sm mr-2"
                               onClick={() => handleEdit(cat)}
                             >
-                              {" "}
-                              Edit{" "}
-                            </button>{" "}
+                              
+                              Edit
+                            </button>
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDelete(cat.id)}
                             >
-                              {" "}
-                              Delete{" "}
-                            </button>{" "}
-                          </div>{" "}
-                        </td>{" "}
+                              
+                              Delete
+                            </button>
+                          </div>
+                        </td>
                       </>
-                    )}{" "}
+                    )}
                   </tr>
-                ))}{" "}
-              </tbody>{" "}
+                ))}
+              </tbody>
             </table>
           )}
         </div>

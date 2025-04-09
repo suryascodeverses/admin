@@ -116,11 +116,14 @@ const CourseMaterialManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form || !mediaFile || !selectedCourseId || !selectedCategoryId) {
+    if (!form || !selectedCourseId || !selectedCategoryId) {
       notifyError("Please complete all required fields.");
       return;
     }
-
+    if (!form.id && !mediaFile) {
+      notifyError("Please upload a media file.");
+      return;
+    }
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
@@ -176,7 +179,7 @@ const CourseMaterialManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`${base_api}/api/courses/material/${id}`, {
+      const res = await fetch(`${base_api}/api/courses-material/${id}`, {
         method: "DELETE",
       });
       const result = await res.json();
@@ -219,7 +222,7 @@ const CourseMaterialManagement: React.FC = () => {
           }))}
           placeholder="Select Course"
         />
-        {categories.length > 0 && (
+        { (
           <ReactSelect
             className="mb-6 w-full"
             value={

@@ -9,7 +9,7 @@ interface Course {
   title: string;
   description: string;
   video: string;
-  categoryId: string;
+  // categoryId: string;
   categoryTypeId: string;
 }
 
@@ -28,7 +28,7 @@ const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [form, setForm] = useState<Partial<Course>>({});
-  const [categories, setCategories] = useState<Category[]>([]);
+  // const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
 
   const fetchCourses = async () => {
@@ -61,32 +61,32 @@ const CourseManagement: React.FC = () => {
     }
   };
 
-  const fetchCategories = async () => {
-    if (!form.categoryTypeId) return;
-    try {
-      const res = await fetch(
-        `${base_api}/api/categories/category-by-type/${form.categoryTypeId}`
-      );
-      const data = await res.json();
-      if (data.success) {
-        setCategories(data.data);
-      } else {
-        notifyError(data.message || "Failed to fetch categories.");
-      }
-    } catch (error) {
-      console.error(error);
-      notifyError("Error fetching categories.");
-    }
-  };
+  // const fetchCategories = async () => {
+  //   if (!form.categoryTypeId) return;
+  //   try {
+  //     const res = await fetch(
+  //       `${base_api}/api/categories/category-by-type/${form.categoryTypeId}`
+  //     );
+  //     const data = await res.json();
+  //     if (data.success) {
+  //       setCategories(data.data);
+  //     } else {
+  //       notifyError(data.message || "Failed to fetch categories.");
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     notifyError("Error fetching categories.");
+  //   }
+  // };
 
   useEffect(() => {
     fetchCourses();
     fetchCategoryTypes();
   }, []);
 
-  useEffect(() => {
-    fetchCategories();
-  }, [form.categoryTypeId]);
+  // useEffect(() => {
+  //   fetchCategories();
+  // }, [form.categoryTypeId]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -219,7 +219,7 @@ const CourseManagement: React.FC = () => {
               isClearable
             />
           </div>
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <ReactSelect
               className="w-full mb-4"
               value={
@@ -244,7 +244,7 @@ const CourseManagement: React.FC = () => {
               placeholder="Select Category"
               isClearable
             />
-          </div>
+          </div> */}
           <button type="submit" className="tp-btn px-6 py-2">
             {form.id ? "Update Course" : "Add Course"}
           </button>

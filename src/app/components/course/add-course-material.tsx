@@ -1,21 +1,28 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-import { notifySuccess, notifyError } from "@/utils/toast"; // Adjust path as needed
+import { notifySuccess, notifyError } from "@/utils/toast";
 
 interface Course {
   id: string;
   title: string;
+  categoryTypeId: string;
 }
 
 interface CourseMaterial {
   id: string;
   title: string;
   description: string;
-  // duration: string;
   fees: string;
   media: { name: string; path: string; type: string };
   courseId: string;
+  categoryId?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  categoryTypeId: string;
 }
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -23,10 +30,11 @@ const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 const CourseMaterialManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
   const [form, setForm] = useState<CourseMaterial | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
-  console.log(selectedCourseId);
 
   const fetchCourses = async () => {
     try {
@@ -43,20 +51,33 @@ const CourseMaterialManagement: React.FC = () => {
     }
   };
 
-  const fetchMaterials = async () => {
-    if (!selectedCourseId) return;
+  const fetchCategories = async (categoryTypeId: string) => {
     try {
       const res = await fetch(
-        `${base_api}/api/courses/material${
-          selectedCourseId !== "" ? `/courseId/${selectedCourseId}` : ""
-        }`
+        `${base_api}/api/categories/category-by-type/${categoryTypeId}`
       );
       const data = await res.json();
       if (data.success) {
-        const filtered = data.data.filter(
-          (mat: CourseMaterial) => mat.courseId === selectedCourseId
-        );
-        setMaterials(filtered);
+        setCategories(data.data);
+      } else {
+        notifyError(data.message || "Failed to fetch categories.");
+      }
+    } catch (error) {
+      console.error(error);
+      notifyError("Error fetching categories.");
+    }
+  };
+
+  const fetchMaterials = async () => {
+    try {
+      const res = await fetch(
+        selectedCourseId
+          ? `${base_api}/api/courses-material/courseId/${selectedCourseId}`
+          : `${base_api}/api/courses-material`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setMaterials(data.data);
       } else {
         notifyError(data.message || "Failed to fetch materials.");
       }
@@ -71,6 +92,12 @@ const CourseMaterialManagement: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const selectedCourse = courses.find(
+      (course) => course.id === selectedCourseId
+    );
+    if (selectedCourse?.categoryTypeId) {
+      fetchCategories(selectedCourse.categoryTypeId);
+    }
     fetchMaterials();
   }, [selectedCourseId]);
 
@@ -89,7 +116,7 @@ const CourseMaterialManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form || !mediaFile || !selectedCourseId) {
+    if (!form || !mediaFile || !selectedCourseId || !selectedCategoryId) {
       notifyError("Please complete all required fields.");
       return;
     }
@@ -97,15 +124,22 @@ const CourseMaterialManagement: React.FC = () => {
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
-        if (value && key !== "id" && key !== "media" && key !== "courseId") {
+        if (
+          value &&
+          key !== "id" &&
+          key !== "media" &&
+          key !== "courseId" &&
+          key !== "categoryId"
+        ) {
           formData.append(key, value);
         }
       });
       formData.append("media", mediaFile);
       formData.append("courseId", selectedCourseId);
+      formData.append("categoryId", selectedCategoryId);
 
       const res = await fetch(
-        `${base_api}/api/courses/material${form.id ? `/${form.id}` : "/add"}`,
+        `${base_api}/api/courses-material${form.id ? `/${form.id}` : "/add"}`,
         {
           method: form.id ? "PUT" : "POST",
           body: formData,
@@ -114,9 +148,12 @@ const CourseMaterialManagement: React.FC = () => {
 
       const result = await res.json();
       if (res.ok) {
-        notifySuccess(`Material ${form.id ? "updated" : "added"} successfully!`);
+        notifySuccess(
+          `Material ${form.id ? "updated" : "added"} successfully!`
+        );
         setForm(null);
         setMediaFile(null);
+        setSelectedCategoryId("");
         fetchMaterials();
       } else {
         notifyError(result.message || "Failed to submit material.");
@@ -127,8 +164,14 @@ const CourseMaterialManagement: React.FC = () => {
     }
   };
 
-  const handleEdit = (material: CourseMaterial) => {
+  const handleEdit = async (material: CourseMaterial) => {
     setForm(material);
+    setSelectedCourseId(material.courseId);
+    const course = courses.find((c) => c.id === material.courseId);
+    if (course?.categoryTypeId) {
+      await fetchCategories(course.categoryTypeId);
+    }
+    setSelectedCategoryId(material.categoryId || "");
   };
 
   const handleDelete = async (id: string) => {
@@ -148,26 +191,52 @@ const CourseMaterialManagement: React.FC = () => {
       notifyError("Error deleting course material.");
     }
   };
+
+  const selectedCourse = courses.find(
+    (course) => course.id === selectedCourseId
+  );
+  const selectedCategory = categories.find(
+    (cat) => cat.id === selectedCategoryId
+  );
+
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">
         <ReactSelect
-          className="mb-6 w-full"
+          className="mb-4 w-full"
           value={
-            courses.find((course) => course.id === selectedCourseId) && {
-              value: selectedCourseId,
-              label: courses.find((course) => course.id === selectedCourseId)
-                ?.title,
-            }
+            selectedCourse
+              ? { value: selectedCourseId, label: selectedCourse.title }
+              : null
           }
-          onChange={(selectedOption) =>
-            setSelectedCourseId(selectedOption?.value || "")
-          }
+          onChange={(selectedOption) => {
+            setSelectedCourseId(selectedOption?.value || "");
+            setSelectedCategoryId("");
+          }}
           options={courses.map((course) => ({
             value: course.id,
             label: course.title,
           }))}
+          placeholder="Select Course"
         />
+        {categories.length > 0 && (
+          <ReactSelect
+            className="mb-6 w-full"
+            value={
+              selectedCategory
+                ? { value: selectedCategoryId, label: selectedCategory.name }
+                : null
+            }
+            onChange={(selectedOption) =>
+              setSelectedCategoryId(selectedOption?.value || "")
+            }
+            options={categories.map((cat) => ({
+              value: cat.id,
+              label: cat.name,
+            }))}
+            placeholder="Select Category"
+          />
+        )}
       </div>
 
       <div className="col-span-12 lg:col-span-4">
@@ -176,6 +245,7 @@ const CourseMaterialManagement: React.FC = () => {
           className="bg-white px-8 py-8 rounded-md mb-6"
         >
           <h4 className="text-[22px] mb-4">Add / Edit Course Material</h4>
+
           <div className="mb-4">
             <input
               type="text"
@@ -187,6 +257,7 @@ const CourseMaterialManagement: React.FC = () => {
               required
             />
           </div>
+
           <div className="mb-4">
             <textarea
               name="description"
@@ -197,17 +268,7 @@ const CourseMaterialManagement: React.FC = () => {
               required
             />
           </div>
-          {/* <div className="mb-4">
-            <input
-              type="text"
-              name="duration"
-              value={form?.duration || ""}
-              onChange={handleChange}
-              placeholder="Duration"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div> */}
+
           <div className="mb-4">
             <input
               type="number"
@@ -219,6 +280,7 @@ const CourseMaterialManagement: React.FC = () => {
               required
             />
           </div>
+
           <div className="mb-4">
             <input
               type="file"
@@ -228,9 +290,26 @@ const CourseMaterialManagement: React.FC = () => {
               required={!form?.id}
             />
           </div>
-          <button type="submit" className="tp-btn px-6 py-2">
-            {form?.id ? "Update Material" : "Add Material"}
-          </button>
+
+          <div className="flex gap-3">
+            <button type="submit" className="tp-btn px-6 py-2">
+              {form?.id ? "Update Material" : "Add Material"}
+            </button>
+
+            {form?.id && (
+              <button
+                type="button"
+                className="tp-btn bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-2"
+                onClick={() => {
+                  setForm(null);
+                  setMediaFile(null);
+                  setSelectedCategoryId("");
+                }}
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
         </form>
       </div>
 

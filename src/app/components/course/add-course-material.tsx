@@ -137,8 +137,10 @@ const CourseMaterialManagement: React.FC = () => {
           formData.append(key, value);
         }
       });
-      formData.append("media", mediaFile);
-      formData.append("courseId", selectedCourseId);
+      if (mediaFile) {
+        formData.append("media", mediaFile); 
+      }     
+       formData.append("courseId", selectedCourseId);
       formData.append("categoryId", selectedCategoryId);
 
       const res = await fetch(

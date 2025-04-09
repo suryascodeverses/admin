@@ -248,52 +248,42 @@ const CounsellingManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {items.map((item) => (
                 <div
-                  key={item.id}
-                  className="bg-gray-100 p-4 rounded-md shadow-sm flex gap-4 items-start mb-4"
-                >
-                  <Image
-                    src={item.media?.path}
-                    alt={item.title}
-                    width={100}
-                    height={80}
-                    className="rounded-md object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4
-                        className="text-lg font-semibold truncate max-w-[220px]"
-                        title={item.title}
-                      >
-                        {item.title}
-                      </h4>
-                      <span className="text-primary font-medium">
-                        ₹{item.price}
-                      </span>
-                    </div>
-
-                    <p
-                      className="text-sm text-gray-500 truncate max-w-[250px]"
-                      title={item.category?.name}
-                    >
-                      {item.category?.name || "—"}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+                key={item.id}
+                className="bg-gray-100 p-4 rounded-md shadow-sm flex flex-col gap-2 mb-4"
+              >
+                <div className="flex items-center justify-between">
+                  <h4
+                    className="text-lg font-semibold truncate max-w-[220px]"
+                    title={item.title}
+                  >
+                    {item.title}
+                  </h4>
+                  <span className="text-primary font-medium">₹{item.price}</span>
                 </div>
+              
+                <p
+                  className="text-md text-gray-500 truncate max-w-[250px]"
+                  title={item.category?.name}
+                >
+                  {item.category?.name || "—"}
+                </p>
+              
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => handleEdit(item)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              
               ))}
             </div>
           )}

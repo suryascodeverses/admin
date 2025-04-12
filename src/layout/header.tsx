@@ -105,7 +105,8 @@ const Header = ({ setSideMenu }: IProps) => {
                 className="relative"
                 type="button"
               >
-                {user?.image ? (
+                <span className="text-lg font-medium ">Account</span>
+                {/* {user?.image ? (
                   <Image
                     className="w-[40px] h-[40px] rounded-md"
                     src={user.image}
@@ -125,14 +126,14 @@ const Header = ({ setSideMenu }: IProps) => {
                     style={{ objectFit: "cover" }}
                     priority
                   />
-                )}
-                <span className="w-[12px] h-[12px] inline-block bg-green-500 rounded-full absolute -top-[4px] -right-[4px] border-[2px] border-white"></span>
+                )} */}
+                {/* <span className="w-[12px] h-[12px] inline-block bg-green-500 rounded-full absolute -top-[4px] -right-[4px] border-[2px] border-white"></span> */}
               </button>
 
               {profileOpen && (
                 <div className="absolute w-[280px] top-full right-0 shadow-lg rounded-md bg-white py-5 px-5">
                   <div className="flex items-center space-x-3 border-b border-gray pb-3 mb-2">
-                    <div>
+                    {/* <div>
                       <Image
                         className="w-[50px] h-[50px] rounded-md"
                         src={user?.image ? user.image : default_user}
@@ -142,7 +143,7 @@ const Header = ({ setSideMenu }: IProps) => {
                         style={{ objectFit: "cover" }}
                         priority
                       />
-                    </div>
+                    </div> */}
                     <div>
                       <h5 className="text-base mb-1 leading-none">
                         {user?.name}
@@ -153,14 +154,14 @@ const Header = ({ setSideMenu }: IProps) => {
                     </div>
                   </div>
                   <ul>
-                    <li>
+                    {/* <li>
                       <Link
                         href="/dashboard"
                         className="px-5 py-2 w-full block hover:bg-gray rounded-md hover:text-theme text-base"
                       >
                         Dashboard
                       </Link>
-                    </li>
+                    </li> */}
                     <li>
                       <Link
                         href="/profile"

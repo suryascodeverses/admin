@@ -9,6 +9,7 @@ const AddCategoryType = () => {
   const [allTypes, setAllTypes] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedName, setEditedName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchTypes();
@@ -55,6 +56,9 @@ const AddCategoryType = () => {
     }
 
     try {
+      // console.log('hitting')
+      // debugger
+      setSubmitting(true);
       const res = await fetch(`${base_api}/api/category-types/add-all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,9 +73,11 @@ const AddCategoryType = () => {
       } else {
         notifyError(result.message || "Failed to add category types.");
       }
+      setSubmitting(false);
     } catch (err) {
       console.error("Submit error:", err);
       notifyError("Something went wrong while adding category types.");
+      setSubmitting(false);
     }
   };
 
@@ -87,6 +93,8 @@ const AddCategoryType = () => {
     }
 
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/category-types/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -101,17 +109,22 @@ const AddCategoryType = () => {
       } else {
         notifyError(result.message || "Failed to update category type.");
       }
+      setSubmitting(false);
     } catch (err) {
       console.error("Update error:", err);
       notifyError("Something went wrong while updating category type.");
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/category-types/${id}`, {
         method: "DELETE",
       });
+      setSubmitting(false);
 
       const result = await res.json();
       if (res.ok) {
@@ -123,6 +136,7 @@ const AddCategoryType = () => {
     } catch (err) {
       console.error("Delete error:", err);
       notifyError("Something went wrong while deleting category type.");
+      setSubmitting(false);
     }
   };
 
@@ -163,7 +177,11 @@ const AddCategoryType = () => {
                 )}
               </div>
             ))}
-            <button className="tp-btn px-7 py-2 mt-2" type="submit">
+            <button
+              className="tp-btn px-7 py-2 mt-2"
+              type="submit"
+              disabled={submitting}
+            >
               Submit Types
             </button>
           </div>
@@ -194,6 +212,7 @@ const AddCategoryType = () => {
                         <button
                           onClick={() => handleUpdate(type.id)}
                           className="btn btn-success btn-sm"
+                          disabled={submitting}
                         >
                           Save
                         </button>
@@ -212,12 +231,14 @@ const AddCategoryType = () => {
                         <button
                           onClick={() => handleEdit(type)}
                           className="btn btn-outline btn-sm"
+                          disabled={submitting}
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(type.id)}
                           className="btn btn-error btn-sm"
+                          disabled={submitting}
                         >
                           Delete
                         </button>

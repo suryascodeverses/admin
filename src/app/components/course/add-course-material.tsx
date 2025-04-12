@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
 import { notifySuccess, notifyError } from "@/utils/toast";
+import DefaultUploadImg from "../products/add-product/default-upload-img";
 
 interface Course {
   id: string;
@@ -35,7 +36,8 @@ const CourseMaterialManagement: React.FC = () => {
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
   const [form, setForm] = useState<CourseMaterial | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
-
+  const [submitting, setSubmitting] = useState(false);
+  console.log("media", mediaFile);
   const fetchCourses = async () => {
     try {
       const res = await fetch(`${base_api}/api/courses`);
@@ -138,11 +140,11 @@ const CourseMaterialManagement: React.FC = () => {
         }
       });
       if (mediaFile) {
-        formData.append("media", mediaFile); 
-      }     
-       formData.append("courseId", selectedCourseId);
+        formData.append("media", mediaFile);
+      }
+      formData.append("courseId", selectedCourseId);
       formData.append("categoryId", selectedCategoryId);
-
+      setSubmitting(true);
       const res = await fetch(
         `${base_api}/api/courses-material${form.id ? `/${form.id}` : "/add"}`,
         {
@@ -150,7 +152,7 @@ const CourseMaterialManagement: React.FC = () => {
           body: formData,
         }
       );
-
+      setSubmitting(false);
       const result = await res.json();
       if (res.ok) {
         notifySuccess(
@@ -166,6 +168,7 @@ const CourseMaterialManagement: React.FC = () => {
     } catch (error) {
       console.error(error);
       notifyError("Error submitting course material.");
+      setSubmitting(false);
     }
   };
 
@@ -181,6 +184,8 @@ const CourseMaterialManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/courses-material/${id}`, {
         method: "DELETE",
       });
@@ -191,9 +196,11 @@ const CourseMaterialManagement: React.FC = () => {
       } else {
         notifyError(result.message || "Failed to delete material.");
       }
+      setSubmitting(false);
     } catch (error) {
       console.error(error);
       notifyError("Error deleting course material.");
+      setSubmitting(false);
     }
   };
 
@@ -207,6 +214,7 @@ const CourseMaterialManagement: React.FC = () => {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">
+        <span className="text-md"> Filter By Course</span>
         <ReactSelect
           className="mb-4 w-full"
           value={
@@ -224,7 +232,7 @@ const CourseMaterialManagement: React.FC = () => {
           }))}
           placeholder="Select Course"
         />
-        { (
+        {
           <ReactSelect
             className="mb-6 w-full"
             value={
@@ -241,7 +249,7 @@ const CourseMaterialManagement: React.FC = () => {
             }))}
             placeholder="Select Category"
           />
-        )}
+        }
       </div>
 
       <div className="col-span-12 lg:col-span-4">
@@ -285,8 +293,33 @@ const CourseMaterialManagement: React.FC = () => {
               required
             />
           </div>
-
-          <div className="mb-4">
+          <div className="my-8">
+            <div className="text-center flex items-center justify-center my-2">
+              {form?.id ? (
+                <DefaultUploadImg img={form.media?.path} wh={100} />
+              ) : (
+                <DefaultUploadImg wh={100} />
+              )}
+            </div>
+            <div>
+              <input
+                onChange={handleMediaUpload}
+                type="file"
+                name="image"
+                id="product_img"
+                className="hidden"
+                required={!form?.id}
+              />
+              <label
+                htmlFor="product_img"
+                className="text-tiny w-full inline-block py-1 px-4 rounded-md border border-gray6 text-center hover:cursor-pointer hover:bg-theme hover:text-white hover:border-theme transition"
+              >
+                Upload Image
+              </label>
+            </div>
+            {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
+          </div>
+          {/* <div className="mb-4">
             <input
               type="file"
               accept="image/*"
@@ -294,11 +327,15 @@ const CourseMaterialManagement: React.FC = () => {
               className="file-input file-input-bordered w-full"
               required={!form?.id}
             />
-          </div>
+          </div> */}
 
-          <div className="flex gap-3">
-            <button type="submit" className="tp-btn px-6 py-2">
-              {form?.id ? "Update Material" : "Add Material"}
+          <div className="flex gap-3 items-center justify-center my-2 ">
+            <button
+              type="submit"
+              className="tp-btn px-6 py-2"
+              disabled={submitting}
+            >
+              {form?.id ? "Update" : "Add"}
             </button>
 
             {form?.id && (
@@ -311,7 +348,7 @@ const CourseMaterialManagement: React.FC = () => {
                   setSelectedCategoryId("");
                 }}
               >
-                Cancel Edit
+                Cancel
               </button>
             )}
           </div>
@@ -357,6 +394,7 @@ const CourseMaterialManagement: React.FC = () => {
                       <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleDelete(material.id)}
+                        disabled={submitting}
                       >
                         Delete
                       </button>

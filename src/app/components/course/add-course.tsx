@@ -30,6 +30,7 @@ const CourseManagement: React.FC = () => {
   const [form, setForm] = useState<Partial<Course>>({});
   // const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchCourses = async () => {
     try {
@@ -105,6 +106,8 @@ const CourseManagement: React.FC = () => {
     const method = form.id ? "PUT" : "POST";
 
     try {
+      setSubmitting(true);
+
       const res = await fetch(endpoint, {
         method,
         headers: {
@@ -112,6 +115,7 @@ const CourseManagement: React.FC = () => {
         },
         body: JSON.stringify(form),
       });
+      setSubmitting(false);
 
       const result = await res.json();
 
@@ -125,6 +129,7 @@ const CourseManagement: React.FC = () => {
     } catch (error) {
       console.error(error);
       notifyError("Error submitting course.");
+      setSubmitting(false);
     }
   };
 
@@ -134,9 +139,13 @@ const CourseManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/courses/${id}`, {
         method: "DELETE",
       });
+      setSubmitting(false);
+
       const result = await res.json();
       if (res.ok) {
         notifySuccess("Course deleted successfully.");
@@ -147,6 +156,7 @@ const CourseManagement: React.FC = () => {
     } catch (error) {
       console.error(error);
       notifyError("Error deleting course.");
+      setSubmitting(false);
     }
   };
 
@@ -245,7 +255,11 @@ const CourseManagement: React.FC = () => {
               isClearable
             />
           </div> */}
-          <button type="submit" className="tp-btn px-6 py-2">
+          <button
+            type="submit"
+            className="tp-btn px-6 py-2"
+            disabled={submitting}
+          >
             {form.id ? "Update Course" : "Add Course"}
           </button>
         </form>
@@ -284,6 +298,7 @@ const CourseManagement: React.FC = () => {
                       <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleDelete(course.id)}
+                        disabled={submitting}
                       >
                         Delete
                       </button>

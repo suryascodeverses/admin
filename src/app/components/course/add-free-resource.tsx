@@ -1,6 +1,7 @@
 "use client";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
+import ReactSelect from "react-select";
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -20,6 +21,11 @@ export default function FreeResourcesPage() {
     title: "",
     type: "pdf",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const typeOptions = [
+    { value: "pdf", label: "PDF" },
+    { value: "video", label: "Video" },
+  ];
 
   useEffect(() => {
     fetchResources();
@@ -39,8 +45,12 @@ export default function FreeResourcesPage() {
       notifyError("An error occurred while fetching resources.");
     }
   };
-  
-  const handleInputChange = (index: number, field: keyof FreeResource, value: string) => {
+
+  const handleInputChange = (
+    index: number,
+    field: keyof FreeResource,
+    value: string
+  ) => {
     const updated = [...resources];
     updated[index][field] = value as any;
     setResources(updated);
@@ -58,19 +68,22 @@ export default function FreeResourcesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const valid = resources.filter(r => r.title.trim() && r.type);
+    const valid = resources.filter((r) => r.title.trim() && r.type);
     if (valid.length === 0) {
       notifyError("Please fill in all required fields.");
       return;
     }
-  
+
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/free-resources/bulk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify( resources ),
+        body: JSON.stringify(resources),
       });
-  
+      setSubmitting(false);
+
       const data = await res.json();
       if (res.ok) {
         notifySuccess("Resources added successfully.");
@@ -82,9 +95,9 @@ export default function FreeResourcesPage() {
     } catch (err) {
       console.error("Submit error:", err);
       notifyError("An error occurred while submitting resources.");
+      setSubmitting(false);
     }
   };
-  
 
   const handleEdit = (res: FreeResource) => {
     setEditingId(res.id || "");
@@ -93,12 +106,15 @@ export default function FreeResourcesPage() {
 
   const handleUpdate = async (id: string) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/free-resources/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
       });
-  
+      setSubmitting(false);
+
       const data = await res.json();
       if (res.ok) {
         notifySuccess("Resource updated successfully.");
@@ -110,15 +126,19 @@ export default function FreeResourcesPage() {
     } catch (err) {
       console.error("Update error:", err);
       notifyError("An error occurred while updating resource.");
+      setSubmitting(false);
     }
   };
-  
+
   const handleDelete = async (id: string) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/free-resources/${id}`, {
         method: "DELETE",
       });
-  
+      setSubmitting(false);
+
       const data = await res.json();
       if (res.ok) {
         notifySuccess("Resource deleted successfully.");
@@ -129,9 +149,9 @@ export default function FreeResourcesPage() {
     } catch (err) {
       console.error("Delete error:", err);
       notifyError("An error occurred while deleting resource.");
+      setSubmitting(false);
     }
   };
-  
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -147,30 +167,71 @@ export default function FreeResourcesPage() {
                   placeholder="Resource title"
                   className="input input-bordered w-full mb-2"
                   value={res.title}
-                  onChange={(e) => handleInputChange(i, "title", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange(i, "title", e.target.value)
+                  }
                 />
-                <select
+
+                <ReactSelect
+                  className="mb-6 w-full"
+                  // value={
+                  //   selectedCategory
+                  //     ? {
+                  //         value: selectedCategoryId,
+                  //         label: selectedCategory.name,
+                  //       }
+                  //     : null
+                  // }
+                  onChange={(selectedOption: any) =>
+                    handleInputChange(i, "type", selectedOption?.value)
+                  }
+                  options={[
+                    {
+                      value: "pdf",
+                      label: "PDF",
+                    },
+                    {
+                      value: "video",
+                      label: "Video",
+                    },
+                  ]}
+                  placeholder="Select Category"
+                />
+
+                {/* <select
                   className="select select-bordered w-full mb-2"
                   value={res.type}
                   onChange={(e) => handleInputChange(i, "type", e.target.value)}
                 >
                   <option value="pdf">PDF</option>
                   <option value="video">Video</option>
-                </select>
+                </select> */}
                 <div className="flex justify-between">
                   {i === resources.length - 1 ? (
-                    <button type="button" className="btn btn-outline btn-sm" onClick={handleAddRow}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={handleAddRow}
+                    >
                       + Add Another
                     </button>
                   ) : (
-                    <button type="button" className="text-red-500" onClick={() => handleRemoveRow(i)}>
+                    <button
+                      type="button"
+                      className="text-red-500"
+                      onClick={() => handleRemoveRow(i)}
+                    >
                       × Remove
                     </button>
                   )}
                 </div>
               </div>
             ))}
-            <button type="submit" className="btn btn-primary w-full mt-4">
+            <button
+              type="submit"
+              className="btn btn-primary w-full mt-4"
+              disabled={submitting}
+            >
               Submit
             </button>
           </div>
@@ -186,9 +247,7 @@ export default function FreeResourcesPage() {
           ) : (
             <table className="table w-full">
               <thead className="thead-dark">
-                
                 <tr>
-                  
                   <th scope="col" style={{ width: "50%", textAlign: "start" }}>
                     Title
                   </th>
@@ -211,27 +270,56 @@ export default function FreeResourcesPage() {
                             className="input input-bordered w-full"
                             value={editData.title}
                             onChange={(e) =>
-                              setEditData({ ...editData, title: e.target.value })
+                              setEditData({
+                                ...editData,
+                                title: e.target.value,
+                              })
                             }
                           />
                         </td>
                         <td>
-                          <select
+                          <ReactSelect
+                            className="w-full mb-4"
+                            value={
+                              typeOptions.find(
+                                (option) => option.value === editData.type
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              setEditData({
+                                ...editData,
+                                type: selectedOption?.value as "pdf" | "video",
+                              })
+                            }
+                            options={typeOptions}
+                            placeholder="Select Type"
+                          />
+                          {/* <select
                             className="select select-bordered w-full"
                             value={editData.type}
                             onChange={(e) =>
-                              setEditData({ ...editData, type: e.target.value as any })
+                              setEditData({
+                                ...editData,
+                                type: e.target.value as any,
+                              })
                             }
                           >
                             <option value="pdf">PDF</option>
                             <option value="video">Video</option>
-                          </select>
+                          </select> */}
                         </td>
                         <td className="flex gap-2">
-                          <button className="btn btn-sm btn-success" onClick={() => handleUpdate(res.id!)}>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleUpdate(res.id!)}
+                            disabled={submitting}
+                          >
                             Save
                           </button>
-                          <button className="btn btn-sm btn-secondary" onClick={() => setEditingId(null)}>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => setEditingId(null)}
+                          >
                             Cancel
                           </button>
                         </td>
@@ -241,10 +329,17 @@ export default function FreeResourcesPage() {
                         <td>{res.title}</td>
                         <td>{res.type}</td>
                         <td className="flex gap-2">
-                          <button className="btn btn-sm btn-outline" onClick={() => handleEdit(res)}>
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleEdit(res)}
+                          >
                             Edit
                           </button>
-                          <button className="btn btn-sm btn-error" onClick={() => handleDelete(res.id!)}>
+                          <button
+                            className="btn btn-sm btn-error"
+                            onClick={() => handleDelete(res.id!)}
+                            disabled={submitting}
+                          >
                             Delete
                           </button>
                         </td>

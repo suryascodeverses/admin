@@ -25,6 +25,7 @@ const CategoryForm = () => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({ name: "", categoryTypeId: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCategoryTypes();
@@ -93,11 +94,14 @@ const CategoryForm = () => {
     }
 
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/categories/add-all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categories: validCategories }),
       });
+      setSubmitting(false);
 
       const result = await res.json();
       if (res.ok) {
@@ -110,6 +114,7 @@ const CategoryForm = () => {
     } catch (err) {
       console.error("Submission error:", err);
       notifyError("An error occurred while submitting categories.");
+      setSubmitting(false);
     }
   };
 
@@ -128,11 +133,14 @@ const CategoryForm = () => {
     }
 
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/categories/edit/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
       });
+      setSubmitting(false);
 
       const data = await res.json();
       if (res.ok) {
@@ -145,14 +153,18 @@ const CategoryForm = () => {
     } catch (err) {
       console.error("Update failed:", err);
       notifyError("An error occurred while updating the category.");
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/categories/delete/${id}`, {
         method: "DELETE",
       });
+      setSubmitting(false);
 
       const data = await res.json();
       if (res.ok) {
@@ -164,6 +176,7 @@ const CategoryForm = () => {
     } catch (err) {
       console.error("Delete failed:", err);
       notifyError("An error occurred while deleting the category.");
+      setSubmitting(false);
     }
   };
   return (
@@ -186,7 +199,7 @@ const CategoryForm = () => {
                     handleInputChange(index, "name", e.target.value)
                   }
                 />
-                {/* <ReactSelect
+                <ReactSelect
                   className="mb-2 w-full"
                   value={
                     categoryTypes.find(
@@ -209,8 +222,8 @@ const CategoryForm = () => {
                     value: type.id,
                     label: type.name,
                   }))}
-                /> */}
-                <select
+                />
+                {/* <select
                   className="select select-bordered w-full mb-2"
                   value={cat.categoryTypeId}
                   onChange={(e) =>
@@ -223,7 +236,7 @@ const CategoryForm = () => {
                       {type.name}
                     </option>
                   ))}
-                </select>
+                </select> */}
                 <div className="flex justify-between">
                   {index === categoryList.length - 1 ? (
                     <button
@@ -245,7 +258,11 @@ const CategoryForm = () => {
                 </div>
               </div>
             ))}
-            <button className="tp-btn px-7 py-2 mt-4" type="submit">
+            <button
+              className="tp-btn px-7 py-2 mt-4"
+              type="submit"
+              disabled={submitting}
+            >
               Submit
             </button>
           </div>
@@ -360,6 +377,7 @@ const CategoryForm = () => {
                             <button
                               className="btn btn-success btn-sm mr-2"
                               onClick={() => handleUpdate(cat.id)}
+                              disabled={submitting}
                             >
                               {" "}
                               Save{" "}
@@ -404,6 +422,7 @@ const CategoryForm = () => {
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDelete(cat.id)}
+                              disabled={submitting}
                             >
                               {" "}
                               Delete{" "}

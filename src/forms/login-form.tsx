@@ -73,14 +73,14 @@ const LoginForm = () => {
             Remember Me
           </label>
         </div>
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="forgot.html"
             className="text-tiny font-medium text-theme border-b border-transparent hover:border-theme"
           >
             Forgot Password ?
           </a>
-        </div>
+        </div> */}
       </div>
       <button type="submit" className="tp-btn h-[49px] w-full justify-center">
         Sign In

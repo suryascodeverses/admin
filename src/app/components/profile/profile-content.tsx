@@ -91,7 +91,7 @@ const ProfileContent = ({ profileImg,updateProfile}: IPropType) => {
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
-                <div className="mb-5">
+                {/* <div className="mb-5">
                   <p className="mb-0 text-base text-black">Phone</p>
                   <input
                     {...register("phone", { required: false })}
@@ -101,11 +101,11 @@ const ProfileContent = ({ profileImg,updateProfile}: IPropType) => {
                     placeholder="Phone"
                     defaultValue={user?.phone}
                   />
-                </div>
-                <div className="mb-5 profile-gender-select select-bordered">
+                </div> */}
+                {/* <div className="mb-5 profile-gender-select select-bordered">
                   <p className="mb-0 text-base text-black">Role </p>
                   <AdminRole handleChange={handleChange} setRole={setAdminRole} default_value={user?.role as string}/>
-                </div>
+                </div> */}
               </div>
               <div className="text-end mt-5">
                 <button className="tp-btn px-10 py-2">Save</button>

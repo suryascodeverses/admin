@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
 import Image from "next/image";
 import { notifyError, notifySuccess } from "@/utils/toast";
+import DefaultUploadImg from "../products/add-product/default-upload-img";
 // import { notifyError, notifySuccess } from "@/utils/notify";
 
 interface Counselling {
@@ -35,6 +36,7 @@ const CounsellingManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchItems = async () => {
     try {
@@ -116,6 +118,8 @@ const CounsellingManagement: React.FC = () => {
     const method = form.id ? "PUT" : "POST";
 
     try {
+      setSubmitting(true);
+
       const res = await fetch(endpoint, { method, body: formData });
       const data = await res.json();
       if (data.success) {
@@ -126,8 +130,10 @@ const CounsellingManagement: React.FC = () => {
       } else {
         notifyError(data.message || "Something went wrong");
       }
+      setSubmitting(false);
     } catch (err) {
       notifyError("Something went wrong");
+      setSubmitting(false);
     }
   };
 
@@ -137,6 +143,8 @@ const CounsellingManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      setSubmitting(true);
+
       const res = await fetch(`${base_api}/api/career-counselling/${id}`, {
         method: "DELETE",
       });
@@ -147,8 +155,10 @@ const CounsellingManagement: React.FC = () => {
       } else {
         notifyError("Delete failed");
       }
+      setSubmitting(false);
     } catch (err) {
       notifyError("Delete error");
+      setSubmitting(false);
     }
   };
 
@@ -185,7 +195,33 @@ const CounsellingManagement: React.FC = () => {
             className="input input-bordered w-full h-[44px] px-4 mb-4"
             required
           />
-          <input type="file" onChange={handleFileChange} className="mb-4" />
+          {/* <input type="file" onChange={handleFileChange} className="mb-4" /> */}
+          <div className="my-8">
+            <div className="text-center flex items-center justify-center my-2">
+              {form?.id ? (
+                <DefaultUploadImg img={form.media?.path} wh={100} />
+              ) : (
+                <DefaultUploadImg wh={100} />
+              )}
+            </div>
+            <div>
+              <input
+                onChange={handleFileChange}
+                type="file"
+                name="image"
+                id="product_img"
+                className="hidden"
+                required={!form?.id}
+              />
+              <label
+                htmlFor="product_img"
+                className="text-tiny w-full inline-block py-1 px-4 rounded-md border border-gray6 text-center hover:cursor-pointer hover:bg-theme hover:text-white hover:border-theme transition"
+              >
+                Upload Image
+              </label>
+            </div>
+            {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
+          </div>
 
           <ReactSelect
             className="w-full mb-4"
@@ -233,8 +269,12 @@ const CounsellingManagement: React.FC = () => {
             isClearable
           />
 
-          <button type="submit" className="tp-btn px-6 py-2">
-            {form.id ? "Update" : "Add"} Counselling
+          <button
+            type="submit"
+            className="tp-btn px-6 py-2"
+            disabled={submitting}
+          >
+            {form.id ? "Update" : "Add"} 
           </button>
         </form>
       </div>
@@ -248,42 +288,44 @@ const CounsellingManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {items.map((item) => (
                 <div
-                key={item.id}
-                className="bg-gray-100 p-4 rounded-md shadow-sm flex flex-col gap-2 mb-4"
-              >
-                <div className="flex items-center justify-between">
-                  <h4
-                    className="text-lg font-semibold truncate max-w-[220px]"
-                    title={item.title}
-                  >
-                    {item.title}
-                  </h4>
-                  <span className="text-primary font-medium">₹{item.price}</span>
-                </div>
-              
-                <p
-                  className="text-md text-gray-500 truncate max-w-[250px]"
-                  title={item.category?.name}
+                  key={item.id}
+                  className="bg-gray-100 p-4 rounded-md shadow-sm flex flex-col gap-2 mb-4"
                 >
-                  {item.category?.name || "—"}
-                </p>
-              
-                <div className="flex justify-end gap-2">
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => handleEdit(item)}
+                  <div className="flex items-center justify-between">
+                    <h4
+                      className="text-lg font-semibold truncate max-w-[220px]"
+                      title={item.title}
+                    >
+                      {item.title}
+                    </h4>
+                    <span className="text-primary font-medium">
+                      ₹{item.price}
+                    </span>
+                  </div>
+
+                  <p
+                    className="text-md text-gray-500 truncate max-w-[250px]"
+                    title={item.category?.name}
                   >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    Delete
-                  </button>
+                    {item.category?.name || "—"}
+                  </p>
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={() => handleEdit(item)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDelete(item.id)}
+                      disabled={submitting}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
               ))}
             </div>
           )}

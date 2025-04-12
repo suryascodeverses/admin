@@ -18,6 +18,7 @@ const ProfileImage = ({ setProfileImg, updateData }: IPropType) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { handleImageUpload, uploadData, isError, isLoading } =
     useUploadImage();
+    console.log('kkhol',user,uploadData )
 
   useEffect(() => {
     setProfileImg(

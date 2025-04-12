@@ -7,7 +7,8 @@ export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     uploadImage: builder.mutation<ICloudinaryPostResponse, FormData>({
       query: (data) => ({
-        url: "/api/cloudinary/add-img",
+        // url: "/api/cloudinary/add-img",
+        url: "/api/upload/single",
         method: "POST",
         body: data,
       }),

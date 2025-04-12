@@ -13,9 +13,9 @@ const ProfileArea = () => {
   const [updateProfile, { data: updateData }] = useUpdateProfileMutation();
   return (
     <>
-      <div className="bg-white rounded-md pt-10 mb-10">
+      {/* <div className="bg-white rounded-md pt-10 mb-10">
         <ProfileImage setProfileImg={setProfileImg} updateData={updateData} />
-      </div>
+      </div> */}
       <div className="">
         <h5 className="text-xl mb-0 capitalize">{user?.name}</h5>
       </div>

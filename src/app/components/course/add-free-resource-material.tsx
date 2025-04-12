@@ -115,6 +115,7 @@ const FreeResourceMaterialManagement = () => {
       setEdit(false);
     } else notifyError(retult.message ?? "Something went wrong");
   };
+  window.location.reload();   
 
   const handleEdit = (mat: any) => {
     setEdit(true);

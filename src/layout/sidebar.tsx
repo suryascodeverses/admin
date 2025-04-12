@@ -45,7 +45,7 @@ export default function Sidebar({ sideMenu, setSideMenu }: IProps) {
         <div className="flex flex-col justify-between h-full">
           <div>
             <div className="py-3  px-8 border-b border-gray h-[68px] item-center">
-              <Link href="/dashboard">
+              <Link href="#" onClick={() => window.location.reload()}>
                 {/* <Image
                   className="w-[140px]"
                   width={140}

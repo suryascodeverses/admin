@@ -19,9 +19,9 @@ const RegisterPage = () => {
                   <Link href="/login" className="text-theme">Sign In</Link> </span>
                 </p>
               </div>
-              <div className="">
+              {/* <div className="">
                 <RegisterForm/>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

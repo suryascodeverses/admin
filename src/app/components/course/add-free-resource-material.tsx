@@ -115,7 +115,6 @@ const FreeResourceMaterialManagement = () => {
       setEdit(false);
     } else notifyError(retult.message ?? "Something went wrong");
   };
-  window.location.reload();   
 
   const handleEdit = (mat: any) => {
     setEdit(true);
@@ -211,7 +210,8 @@ const FreeResourceMaterialManagement = () => {
               className="input input-bordered w-full h-[44px] px-4 mb-4"
               required
             />
-          ) : (
+          ) : freeResources.find((r) => r.id === form.freeResourceId)?.type ===
+            "pdf" ? (
             <div className="my-8">
               <div>
                 <input
@@ -231,6 +231,7 @@ const FreeResourceMaterialManagement = () => {
               </div>
               {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
             </div>
+          ) : (
             // <input
             //   type="file"
             //   accept="application/pdf"
@@ -238,6 +239,7 @@ const FreeResourceMaterialManagement = () => {
             //   className="file-input file-input-bordered w-full mb-4"
             //   required={!form?.id}
             // />
+            <></>
           )}
 
           <button

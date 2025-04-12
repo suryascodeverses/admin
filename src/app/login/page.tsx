@@ -14,11 +14,11 @@ const LoginPage = () => {
             <div className="col-span-12  md:w-[500px] mx-auto my-auto  pt-[50px] py-[60px] px-5 md:px-[60px]">
               <div className="text-center">
                 <h4 className="text-[24px] mb-1">Login Now.</h4>
-                <p>{"Don't"} have an account?  
+                {/* <p>{"Don't"} have an account?  
                  <span> 
                     <Link href="/register" className="text-theme">Sign Up</Link> 
                   </span>
-                </p>
+                </p> */}
               </div>
               <div className="">
                 <LoginForm/>

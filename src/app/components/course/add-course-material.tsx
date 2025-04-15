@@ -231,6 +231,7 @@ const CourseMaterialManagement: React.FC = () => {
             label: course.title,
           }))}
           placeholder="Select Course"
+          isClearable
         />
         {
           <ReactSelect
@@ -248,6 +249,7 @@ const CourseMaterialManagement: React.FC = () => {
               label: cat.name,
             }))}
             placeholder="Select Category"
+            isClearable
           />
         }
       </div>

@@ -187,12 +187,12 @@ export default function FreeResourcesPage() {
                   }
                   options={[
                     {
-                      value: "pdf",
-                      label: "PDF",
-                    },
-                    {
                       value: "video",
                       label: "Video",
+                    },
+                    {
+                      value: "pdf",
+                      label: "PDF",
                     },
                   ]}
                   placeholder="Select Category"

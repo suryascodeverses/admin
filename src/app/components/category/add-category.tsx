@@ -202,14 +202,14 @@ const CategoryForm = () => {
                 <ReactSelect
                   className="mb-2 w-full"
                   value={
-                    categoryTypes.find(
-                      (type: any) => type.id === cat.categoryTypeId
-                    ) && {
-                      value: cat.categoryTypeId,
-                      label: categoryTypes.find(
-                        (type: any) => type.id === cat.categoryTypeId
-                      )?.name,
-                    }
+                    cat.categoryTypeId
+                      ? {
+                          value: cat.categoryTypeId,
+                          label: categoryTypes.find(
+                            (type: any) => type.id === cat.categoryTypeId
+                          )?.name,
+                        }
+                      : null
                   }
                   onChange={(selectedOption) =>
                     handleInputChange(

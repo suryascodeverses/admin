@@ -204,14 +204,14 @@ const CourseManagement: React.FC = () => {
             <ReactSelect
               className="w-full mb-4"
               value={
-                categoryTypes.find(
-                  (type) => type.id === form?.categoryTypeId
-                ) && {
-                  value: form?.categoryTypeId,
-                  label: categoryTypes.find(
-                    (type) => type.id === form?.categoryTypeId
-                  )?.name,
-                }
+                form?.categoryTypeId
+                  ? {
+                      value: form.categoryTypeId,
+                      label: categoryTypes.find(
+                        (type) => type.id === form.categoryTypeId
+                      )?.name,
+                    }
+                  : null
               }
               onChange={(selectedOption) =>
                 handleChange({

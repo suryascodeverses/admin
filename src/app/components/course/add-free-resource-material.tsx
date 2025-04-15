@@ -159,11 +159,15 @@ const FreeResourceMaterialManagement = () => {
             placeholder="Select Category Type"
             className="mb-4"
             value={
-              categoryTypes.find((c) => c.id === form.categoryTypeId) && {
-                value: form.categoryTypeId,
-                label: categoryTypes.find((c) => c.id === form.categoryTypeId)
-                  ?.name,
-              }
+              // categoryTypes.find((c) => c.id === form.categoryTypeId) && {
+              form.categoryTypeId
+                ? {
+                    value: form.categoryTypeId,
+                    label: categoryTypes.find(
+                      (c) => c.id === form.categoryTypeId
+                    )?.name,
+                  }
+                : null
             }
             onChange={(opt) => handleSelectChange("categoryTypeId", opt?.value)}
             options={categoryTypes.map((c) => ({ value: c.id, label: c.name }))}
@@ -173,10 +177,14 @@ const FreeResourceMaterialManagement = () => {
             placeholder="Select Category"
             className="mb-4"
             value={
-              categories.find((c) => c.id === form.categoryId) && {
-                value: form.categoryId,
-                label: categories.find((c) => c.id === form.categoryId)?.name,
-              }
+              // categories.find((c) => c.id === form.categoryId) && {
+              form.categoryId
+                ? {
+                    value: form.categoryId,
+                    label: categories.find((c) => c.id === form.categoryId)
+                      ?.name,
+                  }
+                : null
             }
             onChange={(opt) => handleSelectChange("categoryId", opt?.value)}
             options={categories.map((c) => ({ value: c.id, label: c.name }))}
@@ -186,11 +194,15 @@ const FreeResourceMaterialManagement = () => {
             placeholder="Select Free Resource"
             className="mb-4"
             value={
-              freeResources.find((r) => r.id === form.freeResourceId) && {
-                value: form.freeResourceId,
-                label: freeResources.find((r) => r.id === form.freeResourceId)
-                  ?.title,
-              }
+              // freeResources.find((r) => r.id === form.freeResourceId) && {
+              form.freeResourceId
+                ? {
+                    value: form.freeResourceId,
+                    label: freeResources.find(
+                      (r) => r.id === form.freeResourceId
+                    )?.title,
+                  }
+                : null
             }
             onChange={(opt) => handleSelectChange("freeResourceId", opt?.value)}
             options={freeResources.map((r) => ({

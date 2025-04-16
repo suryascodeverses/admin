@@ -405,7 +405,7 @@ const CategoryForm = () => {
                           {" "}
                           <div className="col-12 col-md-3 px-0">
                             {" "}
-                            {cat.categoryType?.name || "-"}{" "}
+                            {cat.categoryCategoryType?.name || "-"}{" "}
                           </div>{" "}
                         </td>{" "}
                         <td>

@@ -15,6 +15,8 @@ interface Counselling {
   media: any;
   categoryId: string;
   categoryTypeId: string;
+  careerCounsellingCategory: any;
+  careerCounsellingCategoryType:any;
   category?: any;
 }
 
@@ -274,7 +276,7 @@ const CounsellingManagement: React.FC = () => {
             className="tp-btn px-6 py-2"
             disabled={submitting}
           >
-            {form.id ? "Update" : "Add"} 
+            {form.id ? "Update" : "Add"}
           </button>
         </form>
       </div>
@@ -307,7 +309,13 @@ const CounsellingManagement: React.FC = () => {
                     className="text-md text-gray-500 truncate max-w-[250px]"
                     title={item.category?.name}
                   >
-                    {item.category?.name || "—"}
+                    {item.careerCounsellingCategory?.name || "—"}
+                  </p>
+                  <p
+                    className="text-md text-gray-500 truncate max-w-[250px]"
+                    title={item.category?.name}
+                  >
+                    {item.careerCounsellingCategoryType?.name || "—"}
                   </p>
 
                   <div className="flex justify-end gap-2">

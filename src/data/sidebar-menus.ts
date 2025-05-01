@@ -115,7 +115,7 @@ const sidebar_menu: Array<ISidebarMenus> = [
   // },
   {
     id: 12,
-    icon: Upload,
+    icon: Leaf,
     link: "/banner",
     title: "Banner Management",
   },

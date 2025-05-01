@@ -11,6 +11,7 @@ import {
   Setting,
   Leaf,
   StuffUser,
+  Upload,
 } from "@/svg";
 
 const sidebar_menu: Array<ISidebarMenus> = [
@@ -112,6 +113,12 @@ const sidebar_menu: Array<ISidebarMenus> = [
   //     { title: "Forgot Password", link: "/forgot-password" }
   //   ],
   // },
+  {
+    id: 12,
+    icon: Upload,
+    link: "/banner",
+    title: "Banner Management",
+  },
 ];
 
 export default sidebar_menu;

@@ -4,6 +4,11 @@ import ReactSelect from "react-select";
 import { notifySuccess, notifyError } from "@/utils/toast";
 import DefaultUploadImg from "../products/add-product/default-upload-img";
 
+interface CategoryType {
+  id: string;
+  name: string;
+}
+
 interface Course {
   id: string;
   title: string;
@@ -17,13 +22,7 @@ interface CourseMaterial {
   fees: string;
   media: { name: string; path: string; type: string };
   courseId: string;
-  categoryId?: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  categoryTypeId: string;
+  categoryId: string;
 }
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -32,46 +31,73 @@ const CourseMaterialManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
   const [form, setForm] = useState<CourseMaterial | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  console.log("media", mediaFile);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
   const fetchCourses = async () => {
     try {
+      setLoading(true);
       const res = await fetch(`${base_api}/api/courses`);
       const data = await res.json();
       if (data.success) {
         setCourses(data.data);
+        setFilteredCourses(data.data);
       } else {
         notifyError(data.message || "Failed to fetch courses.");
       }
     } catch (error) {
       console.error(error);
       notifyError("Error fetching courses.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchCategories = async (categoryTypeId: string) => {
+  const fetchCategoryTypes = async () => {
     try {
-      const res = await fetch(
-        `${base_api}/api/categories/category-by-type/${categoryTypeId}`
-      );
+      setLoading(true);
+      const res = await fetch(`${base_api}/api/category-types`);
       const data = await res.json();
       if (data.success) {
-        setCategories(data.data);
+        setCategoryTypes(data.data);
       } else {
-        notifyError(data.message || "Failed to fetch categories.");
+        notifyError(data.message || "Failed to fetch category types.");
       }
     } catch (error) {
       console.error(error);
-      notifyError("Error fetching categories.");
+      notifyError("Error fetching category types.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchCategoryTypes();
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategoryId) {
+      const filtered = courses.filter(course => course.categoryTypeId === selectedCategoryId);
+      setFilteredCourses(filtered);
+      if (selectedCourseId && !filtered.find(c => c.id === selectedCourseId)) {
+        setSelectedCourseId("");
+      }
+    } else {
+      setFilteredCourses(courses);
+    }
+  }, [selectedCategoryId, courses, selectedCourseId]);
+
   const fetchMaterials = async () => {
     try {
+      setLoading(true);
       const res = await fetch(
         selectedCourseId
           ? `${base_api}/api/courses-material/courseId/${selectedCourseId}`
@@ -86,22 +112,28 @@ const CourseMaterialManagement: React.FC = () => {
     } catch (error) {
       console.error(error);
       notifyError("Error fetching course materials.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    const selectedCourse = courses.find(
-      (course) => course.id === selectedCourseId
-    );
-    if (selectedCourse?.categoryTypeId) {
-      fetchCategories(selectedCourse.categoryTypeId);
-    }
     fetchMaterials();
   }, [selectedCourseId]);
+
+  useEffect(() => {
+    if (selectedCategoryId) {
+      fetch(`${base_api}/api/categories/category-by-type/${selectedCategoryId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) setCategories(data.data);
+          else setCategories([]);
+        })
+        .catch(() => setCategories([]));
+    } else {
+      setCategories([]);
+    }
+  }, [selectedCategoryId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -117,34 +149,49 @@ const CourseMaterialManagement: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form || !selectedCourseId || !selectedCategoryId) {
-      notifyError("Please complete all required fields.");
+    if (e) {
+      e.preventDefault();
+    }
+    
+    if (!selectedCourseId || !selectedCategoryId || !form?.categoryId) {
+      notifyError("Please select category type, course, and category.");
       return;
     }
+
+    if (!form?.title?.trim()) {
+      notifyError("Please enter a title.");
+      return;
+    }
+
+    if (!form?.description?.trim()) {
+      notifyError("Please enter a description.");
+      return;
+    }
+
+    if (!form?.fees) {
+      notifyError("Please enter fees.");
+      return;
+    }
+
     if (!form.id && !mediaFile) {
       notifyError("Please upload a media file.");
       return;
     }
+
     try {
+      setSubmitting(true);
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        if (
-          value &&
-          key !== "id" &&
-          key !== "media" &&
-          key !== "courseId" &&
-          key !== "categoryId"
-        ) {
-          formData.append(key, value);
-        }
-      });
+      
+      formData.append("title", form.title.trim());
+      formData.append("description", form.description.trim());
+      formData.append("fees", form.fees.toString());
+      formData.append("courseId", selectedCourseId);
+      formData.append("categoryId", form.categoryId);
+      
       if (mediaFile) {
         formData.append("media", mediaFile);
       }
-      formData.append("courseId", selectedCourseId);
-      formData.append("categoryId", selectedCategoryId);
-      setSubmitting(true);
+
       const res = await fetch(
         `${base_api}/api/courses-material${form.id ? `/${form.id}` : "/add"}`,
         {
@@ -152,22 +199,23 @@ const CourseMaterialManagement: React.FC = () => {
           body: formData,
         }
       );
-      setSubmitting(false);
+
       const result = await res.json();
+
       if (res.ok) {
-        notifySuccess(
-          `Material ${form.id ? "updated" : "added"} successfully!`
-        );
+        notifySuccess(`Material ${form.id ? "updated" : "added"} successfully!`);
         setForm(null);
         setMediaFile(null);
         setSelectedCategoryId("");
+        setSelectedCourseId("");
         fetchMaterials();
       } else {
-        notifyError(result.message || "Failed to submit material.");
+        throw new Error(result.message || "Failed to submit material.");
       }
-    } catch (error) {
-      console.error(error);
-      notifyError("Error submitting course material.");
+    } catch (error: any) {
+      console.error("Error submitting material:", error);
+      notifyError(error.message || "Error submitting course material.");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -175,17 +223,15 @@ const CourseMaterialManagement: React.FC = () => {
   const handleEdit = async (material: CourseMaterial) => {
     setForm(material);
     setSelectedCourseId(material.courseId);
-    const course = courses.find((c) => c.id === material.courseId);
-    if (course?.categoryTypeId) {
-      await fetchCategories(course.categoryTypeId);
+    const course = courses.find(c => c.id === material.courseId);
+    if (course) {
+      setSelectedCategoryId(course.categoryTypeId);
     }
-    setSelectedCategoryId(material.categoryId || "");
   };
 
   const handleDelete = async (id: string) => {
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/courses-material/${id}`, {
         method: "DELETE",
       });
@@ -204,210 +250,363 @@ const CourseMaterialManagement: React.FC = () => {
     }
   };
 
+  const filteredMaterials = materials.filter(material =>
+    material.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedCategory = categoryTypes.find(
+    (cat) => cat.id === selectedCategoryId
+  );
+  
   const selectedCourse = courses.find(
     (course) => course.id === selectedCourseId
   );
-  const selectedCategory = categories.find(
-    (cat) => cat.id === selectedCategoryId
-  );
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12">
-        <span className="text-md"> Filter By Course</span>
-        <ReactSelect
-          className="mb-4 w-full"
-          value={
-            selectedCourse
-              ? { value: selectedCourseId, label: selectedCourse.title }
-              : null
-          }
-          onChange={(selectedOption) => {
-            setSelectedCourseId(selectedOption?.value || "");
-            setSelectedCategoryId("");
-          }}
-          options={courses.map((course) => ({
-            value: course.id,
-            label: course.title,
-          }))}
-          placeholder="Select Course"
-          isClearable
-        />
-        {
-          <ReactSelect
-            className="mb-6 w-full"
-            value={
-              selectedCategory
-                ? { value: selectedCategoryId, label: selectedCategory.name }
-                : null
-            }
-            onChange={(selectedOption) =>
-              setSelectedCategoryId(selectedOption?.value || "")
-            }
-            options={categories.map((cat) => ({
-              value: cat.id,
-              label: cat.name,
-            }))}
-            placeholder="Select Category"
-            isClearable
-          />
-        }
-      </div>
-
-      <div className="col-span-12 lg:col-span-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-8 py-8 rounded-md mb-6"
-        >
-          <h4 className="text-[22px] mb-4">Add / Edit Course Material</h4>
-
-          <div className="mb-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-[#8B5CF6] p-6 rounded-lg">
+        <h1 className="text-2xl font-semibold text-white mb-2">Course Materials</h1>
+        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:w-auto">
             <input
               type="text"
-              name="title"
-              value={form?.title || ""}
-              onChange={handleChange}
-              placeholder="Material Title"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
+              placeholder="Search materials..."
+              className="w-full sm:w-[300px] h-10 pl-10 pr-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:border-white/40"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
-
-          <div className="mb-4">
-            <textarea
-              name="description"
-              value={form?.description || ""}
-              onChange={handleChange}
-              placeholder="Material Description"
-              className="textarea textarea-bordered w-full px-4"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <input
-              type="number"
-              name="fees"
-              value={form?.fees || ""}
-              onChange={handleChange}
-              placeholder="Fees"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div>
-          <div className="my-8">
-            <div className="text-center flex items-center justify-center my-2">
-              {form?.id ? (
-                <DefaultUploadImg img={form.media?.path} wh={100} />
-              ) : (
-                <DefaultUploadImg wh={100} />
-              )}
-            </div>
-            <div>
-              <input
-                onChange={handleMediaUpload}
-                type="file"
-                name="image"
-                id="product_img"
-                className="hidden"
-                required={!form?.id}
-              />
-              <label
-                htmlFor="product_img"
-                className="text-tiny w-full inline-block py-1 px-4 rounded-md border border-gray6 text-center hover:cursor-pointer hover:bg-theme hover:text-white hover:border-theme transition"
-              >
-                Upload Image
-              </label>
-            </div>
-            {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
-          </div>
-          {/* <div className="mb-4">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleMediaUpload}
-              className="file-input file-input-bordered w-full"
-              required={!form?.id}
-            />
-          </div> */}
-
-          <div className="flex gap-3 items-center justify-center my-2 ">
-            <button
-              type="submit"
-              className="tp-btn px-6 py-2"
-              disabled={submitting}
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-white/60"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              {form?.id ? "Update" : "Add"}
-            </button>
-
-            {form?.id && (
-              <button
-                type="button"
-                className="tp-btn bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-2"
-                onClick={() => {
-                  setForm(null);
-                  setMediaFile(null);
-                  setSelectedCategoryId("");
-                }}
-              >
-                Cancel
-              </button>
-            )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
           </div>
-        </form>
-      </div>
-
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">Course Materials</h3>
-          {materials.length === 0 ? (
-            <p className="text-gray-500">
-              No materials available for this course.
-            </p>
-          ) : (
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left">Image</th>
-                  <th className="text-left">Title</th>
-                  <th className="text-left">Fees</th>
-                  <th className="text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {materials.map((material) => (
-                  <tr key={material.id}>
-                    <td>
-                      <img
-                        src={material.media.path}
-                        alt=""
-                        className="w-16 h-12 object-cover border rounded"
-                      />
-                    </td>
-                    <td>{material.title}</td>
-                    <td>{material.fees}</td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleEdit(material)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(material.id)}
-                        disabled={submitting}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <button
+            onClick={() => setForm({
+              id: "",
+              title: "",
+              description: "",
+              fees: "",
+              media: { name: "", path: "", type: "" },
+              courseId: "",
+              categoryId: "",
+            })}
+            className="px-4 py-2 bg-white text-[#8B5CF6] rounded-lg hover:bg-white/90 transition-colors font-medium flex items-center gap-2"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Material
+          </button>
         </div>
       </div>
+
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="text-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6] mx-auto"></div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white p-6 rounded-lg shadow space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category Type</label>
+            <ReactSelect
+              value={
+                selectedCategory
+                  ? { value: selectedCategoryId, label: selectedCategory.name }
+                  : null
+              }
+              onChange={(selectedOption) => {
+                setSelectedCategoryId(selectedOption?.value || "");
+              }}
+              options={categoryTypes.map((cat) => ({
+                value: cat.id,
+                label: cat.name,
+              }))}
+              placeholder="Select Category Type"
+              className="basic-select"
+              classNamePrefix="select"
+              isDisabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+            <ReactSelect
+              value={
+                selectedCourse
+                  ? { value: selectedCourseId, label: selectedCourse.title }
+                  : null
+              }
+              onChange={(selectedOption) => {
+                setSelectedCourseId(selectedOption?.value || "");
+              }}
+              options={filteredCourses.map((course) => ({
+                value: course.id,
+                label: course.title,
+              }))}
+              placeholder="Select Course"
+              className="basic-select"
+              classNamePrefix="select"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Materials List */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">TITLE</th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">DESCRIPTION</th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">FEES</th>
+                <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMaterials.map((material) => (
+                <tr key={material.id} className="border-b hover:bg-gray-50">
+                  <td className="py-4 px-6">{material.title}</td>
+                  <td className="py-4 px-6">{material.description}</td>
+                  <td className="py-4 px-6">{material.fees}</td>
+                  <td className="py-4 px-6 text-right">
+                    <button
+                      onClick={() => handleEdit(material)}
+                      className="text-blue-600 hover:text-blue-800 mr-4"
+                    >
+                      <svg
+                        className="h-5 w-5 inline"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(material.id)}
+                      className="text-red-600 hover:text-red-800"
+                      disabled={submitting}
+                    >
+                      <svg
+                        className="h-5 w-5 inline"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Form Modal */}
+      {form && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">{form.id ? 'Edit' : 'Add'} Course Material</h2>
+                <button
+                  onClick={() => {
+                    setForm(null);
+                    setMediaFile(null);
+                    setSelectedCategoryId("");
+                    setSelectedCourseId("");
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit(e);
+              }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category Type</label>
+                    <ReactSelect
+                      value={selectedCategory ? { value: selectedCategoryId, label: selectedCategory.name } : null}
+                      onChange={(option) => setSelectedCategoryId(option?.value || "")}
+                      options={categoryTypes.map(cat => ({ value: cat.id, label: cat.name }))}
+                      placeholder="Select Category Type"
+                      className="basic-select"
+                      classNamePrefix="select"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                    <ReactSelect
+                      value={selectedCourse ? { value: selectedCourseId, label: selectedCourse.title } : null}
+                      onChange={(option) => setSelectedCourseId(option?.value || "")}
+                      options={filteredCourses.map(course => ({ value: course.id, label: course.title }))}
+                      placeholder="Select Course"
+                      className="basic-select"
+                      classNamePrefix="select"
+                      isDisabled={!selectedCategoryId}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <ReactSelect
+                      value={categories.find(cat => cat.id === form.categoryId) ? { value: form.categoryId, label: categories.find(cat => cat.id === form.categoryId)?.name } : null}
+                      onChange={option => setForm(prev => ({ ...prev!, categoryId: option?.value || "" }))}
+                      options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                      placeholder="Select Category"
+                      isDisabled={!selectedCategoryId}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={form.title || ""}
+                      onChange={handleChange}
+                      placeholder="Enter title"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fees</label>
+                    <input
+                      type="number"
+                      name="fees"
+                      value={form.fees || ""}
+                      onChange={handleChange}
+                      placeholder="Enter fees"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      name="description"
+                      value={form.description || ""}
+                      onChange={handleChange}
+                      placeholder="Enter description"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      rows={4}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Media</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-24 border rounded-md flex items-center justify-center bg-gray-50">
+                      {form.id && form.media?.path ? (
+                        <DefaultUploadImg img={form.media.path} wh={96} />
+                      ) : (
+                        <DefaultUploadImg wh={96} />
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="product_img"
+                        className="inline-block px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                      >
+                        Upload Image
+                      </label>
+                      <input
+                        onChange={handleMediaUpload}
+                        type="file"
+                        name="image"
+                        id="product_img"
+                        className="hidden"
+                        accept="image/*"
+                        required={!form.id}
+                      />
+                      {mediaFile && (
+                        <p className="mt-2 text-sm text-gray-500">{mediaFile.name}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(null);
+                      setMediaFile(null);
+                      setSelectedCategoryId("");
+                      setSelectedCourseId("");
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting || !selectedCategoryId || !selectedCourseId}
+                    className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+                      submitting || !selectedCategoryId || !selectedCourseId
+                        ? 'bg-indigo-400 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
+                  >
+                    {submitting ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

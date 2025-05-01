@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-
-// Assuming these are defined globally or imported
-import { notifyError, notifySuccess } from "@/utils/toast"; // adjust path as needed
+import { notifyError, notifySuccess } from "@/utils/toast";
 import DefaultUploadImg from "../products/add-product/default-upload-img";
 
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -20,16 +18,204 @@ interface Achievement {
   };
 }
 
-const Achievement: React.FC = () => {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [form, setForm] = useState<Partial<Achievement>>({});
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+// Modal Component
+const AchievementModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  form: Partial<Achievement>;
+  setForm: React.Dispatch<React.SetStateAction<Partial<Achievement>>>;
+  mediaFile: File | null;
+  setMediaFile: React.Dispatch<React.SetStateAction<File | null>>;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  submitting: boolean;
+}> = ({ isOpen, onClose, form, setForm, mediaFile, setMediaFile, handleSubmit, submitting }) => {
+  if (!isOpen) return null;
 
   const typeOptions = [
     { value: "video", label: "Video" },
     { value: "gallery", label: "Gallery" },
   ];
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-xl mx-4">
+        <div className="p-6 border-b">
+          <h3 className="text-xl font-semibold">
+            {form.id ? "Edit" : "Add"} Material
+          </h3>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={form.title || ""}
+                onChange={handleChange}
+                placeholder="Achievement Title"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type
+              </label>
+              <ReactSelect
+                className="w-full"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: "42px",
+                  }),
+                }}
+                value={
+                  typeOptions.find((option) => option.value === form.type) || null
+                }
+                onChange={(selectedOption) => {
+                  handleChange({
+                    target: {
+                      name: "type",
+                      value: selectedOption?.value || "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>);
+                }}
+                options={typeOptions}
+                placeholder="Select Type"
+                isClearable
+                name="type"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Year
+              </label>
+              <input
+                type="number"
+                name="year"
+                value={form.year || ""}
+                onChange={handleChange}
+                placeholder="Year (e.g., 2024)"
+                min={1000}
+                max={9999}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            {form.type === "video" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Video URL
+                </label>
+                <input
+                  type="text"
+                  name="media"
+                  value={form.media?.path || ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      media: { path: e.target.value, type: "video" },
+                    }))
+                  }
+                  placeholder="Video URL"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required={!form.id}
+                />
+              </div>
+            )}
+
+            {form.type === "gallery" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image
+                </label>
+                <div className="text-center flex items-center justify-center my-2">
+                  {form?.id ? (
+                    <DefaultUploadImg img={form.media?.path} wh={100} />
+                  ) : (
+                    <DefaultUploadImg wh={100} />
+                  )}
+                </div>
+                <div>
+                  <input
+                    onChange={(e) => setMediaFile(e.target.files?.[0] || null)}
+                    type="file"
+                    name="media"
+                    id="product_img"
+                    className="hidden"
+                    required={!form?.id}
+                  />
+                  <label
+                    htmlFor="product_img"
+                    className="block w-full text-center py-2 px-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    Upload Image
+                  </label>
+                </div>
+                {mediaFile && (
+                  <p className="mt-2 text-sm text-gray-600">{mediaFile.name}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] disabled:opacity-50 flex items-center gap-2"
+              disabled={submitting}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              {submitting ? "Adding..." : "Add Material"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const Achievement: React.FC = () => {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [form, setForm] = useState<Partial<Achievement>>({});
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const typeOptions = [
+    { value: "video", label: "Video" },
+    { value: "gallery", label: "Gallery" },
+  ];
+
   const fetchAchievements = async () => {
     try {
       const res = await fetch(`${base_api}/api/achievements`);
@@ -48,13 +234,6 @@ const Achievement: React.FC = () => {
   useEffect(() => {
     fetchAchievements();
   }, []);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +275,6 @@ const Achievement: React.FC = () => {
       );
     } catch (error) {
       setSubmitting(false);
-
       console.error(error);
       notifyError("Failed to submit achievement. Please try again.");
     }
@@ -116,7 +294,6 @@ const Achievement: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/achievements/${id}`, {
         method: "DELETE",
       });
@@ -134,194 +311,101 @@ const Achievement: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12 lg:col-span-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-8 py-8 rounded-md mb-6"
-        >
-          <h4 className="text-[22px] mb-4">Add / Edit Achievement</h4>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="title"
-              value={form.title || ""}
-              onChange={handleChange}
-              placeholder="Achievement Title"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="bg-[#7C3AED] px-6 py-8 rounded-lg mx-6 mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-white mb-2">Course Materials</h1>
+            <p className="text-white/80">Manage and organize your course materials</p>
           </div>
-          <div className="mb-4">
-            <ReactSelect
-              className="w-full mb-4"
-              styles={{
-                control: (base) => ({
-                  ...base,
-                  height: "44px",
-                  paddingLeft: "0.75rem", // px-4
-                }),
-              }}
-              value={
-                typeOptions.find((option) => option.value === form.type) || null
-              }
-              onChange={(selectedOption) => {
-                const createFakeEvent = (name: string, value: string) =>
-                  ({
-                    target: {
-                      name,
-                      value,
-                    },
-                  } as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>);
-                // debugger;
-                handleChange(
-                  createFakeEvent("type", selectedOption?.value || "")
-                );
-              }}
-              options={typeOptions}
-              placeholder="Select Type"
-              isClearable
-              name="type"
-            />
-
-            {/* <select
-              name="type"
-              value={form.type || ""}
-              onChange={handleChange}
-              className="select select-bordered w-full h-[44px] px-4"
-              required
-            >
-              <option value="">Select Type</option>
-              <option value="video">Video</option>
-              <option value="gallery">Gallery</option>
-            </select> */}
-          </div>
-          <div className="mb-4">
-            <input
-              type="number"
-              name="year"
-              value={form.year || ""}
-              onChange={handleChange}
-              placeholder="Year (e.g., 2024)"
-              min={1000}
-              max={9999}
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div>
-
-          {form.type === "video" && (
-            <div className="mb-4">
-              <input
-                type="text"
-                name="media"
-                value={form.media?.path || ""}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    media: { path: e.target.value, type: "video" },
-                  }))
-                }
-                placeholder="Video URL"
-                className="input input-bordered w-full h-[44px] px-4"
-                required={!form.id}
-              />
-            </div>
-          )}
-
-          {form.type === "gallery" && (
-            <div className="my-8">
-              <div className="text-center flex items-center justify-center my-2">
-                {form?.id ? (
-                  <DefaultUploadImg img={form.media?.path} wh={100} />
-                ) : (
-                  <DefaultUploadImg wh={100} />
-                )}
-              </div>
-              <div>
-                <input
-                  onChange={(e) => setMediaFile(e.target.files?.[0] || null)}
-                  // accept="image/*"
-                  type="file"
-                  name="media"
-                  id="product_img"
-                  className="hidden"
-                  required={!form?.id}
-                />
-                <label
-                  htmlFor="product_img"
-                  className="text-tiny w-full inline-block py-1 px-4 rounded-md border border-gray6 text-center hover:cursor-pointer hover:bg-theme hover:text-white hover:border-theme transition"
-                >
-                  Upload Image
-                </label>
-              </div>
-              {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
-            </div>
-
-            // <div className="mb-4">
-            //   <input
-            //     type="file"
-            //     name="media"
-            //     accept="image/*"
-            //     onChange={(e) => setMediaFile(e.target.files?.[0] || null)}
-            //     className="file-input file-input-bordered w-full"
-            //   />
-            // </div>
-          )}
-
-          <button
-            type="submit"
-            className="tp-btn px-6 py-2"
-            disabled={submitting}
+          <button 
+            onClick={() => {
+              setForm({});
+              setIsModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-white text-[#7C3AED] rounded-lg font-medium flex items-center gap-2 hover:bg-white/90 transition-colors"
           >
-            {form.id ? "Update " : "Add "}
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Material
           </button>
-        </form>
-      </div>
-
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">All Achievements</h3>
-          {achievements.length === 0 ? (
-            <p className="text-gray-500">No achievements available.</p>
-          ) : (
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left">Title</th>
-                  <th className="text-left">Type</th>
-                  <th className="text-left">Year</th>
-                  <th className="text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {achievements.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.title}</td>
-                    <td>{item.type}</td>
-                    <td>{item.year}</td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleEdit(item)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={submitting}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </div>
       </div>
+
+      {/* Table Section */}
+      <div className="bg-white rounded-lg mx-6 p-6">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600">TITLE</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600">TYPE</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600">YEAR</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {achievements.map((item) => (
+              <tr key={item.id} className="border-b last:border-b-0">
+                <td className="py-4 px-4">{item.title}</td>
+                <td className="py-4 px-4">{item.type}</td>
+                <td className="py-4 px-4">{item.year}</td>
+                <td className="py-4 px-4">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        handleEdit(item);
+                        setIsModalOpen(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={submitting}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      <AchievementModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setForm({});
+          setMediaFile(null);
+        }}
+        form={form}
+        setForm={setForm}
+        mediaFile={mediaFile}
+        setMediaFile={setMediaFile}
+        handleSubmit={handleSubmit}
+        submitting={submitting}
+      />
     </div>
   );
 };

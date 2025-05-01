@@ -5,11 +5,13 @@ import { notifySuccess, notifyError } from "@/utils/toast"; // adjust path if ne
 const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const AddCategoryType = () => {
-  const [typeList, setTypeList] = useState<string[]>([""]);
   const [allTypes, setAllTypes] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedName, setEditedName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
     fetchTypes();
@@ -30,53 +32,36 @@ const AddCategoryType = () => {
     }
   };
 
-  const handleInputChange = (index: number, value: string) => {
-    const newTypes = [...typeList];
-    newTypes[index] = value;
-    setTypeList(newTypes);
-  };
-
-  const handleAddType = () => {
-    setTypeList([...typeList, ""]);
-  };
-
-  const handleDeleteTypeInput = (index: number) => {
-    if (typeList.length > 1) {
-      const updated = typeList.filter((_, i) => i !== index);
-      setTypeList(updated);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validTypes = typeList.filter((type) => type.trim() !== "");
-    if (validTypes.length === 0) {
-      notifyError("Please enter at least one valid category type.");
+    
+    if (!newCategoryName.trim()) {
+      notifyError("Please enter a category name");
       return;
     }
 
     try {
-      // console.log('hitting')
-      // debugger
       setSubmitting(true);
       const res = await fetch(`${base_api}/api/category-types/add-all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ types: validTypes }),
+        body: JSON.stringify({ types: [newCategoryName.trim()] }),
       });
 
       const result = await res.json();
+      
       if (res.ok) {
-        notifySuccess("Category types added successfully!");
-        setTypeList([""]);
-        fetchTypes();
+        notifySuccess("Category type added successfully!");
+        setNewCategoryName("");
+        setIsModalOpen(false);
+        await fetchTypes();
       } else {
-        notifyError(result.message || "Failed to add category types.");
+        notifyError(result.message || "Failed to add category type.");
       }
-      setSubmitting(false);
     } catch (err) {
       console.error("Submit error:", err);
-      notifyError("Something went wrong while adding category types.");
+      notifyError("Something went wrong while adding category type.");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -94,7 +79,6 @@ const AddCategoryType = () => {
 
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/category-types/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -102,17 +86,18 @@ const AddCategoryType = () => {
       });
 
       const result = await res.json();
+      
       if (res.ok) {
         notifySuccess("Category type updated successfully!");
         setEditingId(null);
-        fetchTypes();
+        await fetchTypes();
       } else {
         notifyError(result.message || "Failed to update category type.");
       }
-      setSubmitting(false);
     } catch (err) {
       console.error("Update error:", err);
       notifyError("Something went wrong while updating category type.");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -120,137 +105,203 @@ const AddCategoryType = () => {
   const handleDelete = async (id: number) => {
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/category-types/${id}`, {
         method: "DELETE",
       });
-      setSubmitting(false);
 
       const result = await res.json();
+      
       if (res.ok) {
         notifySuccess("Category type deleted successfully!");
-        fetchTypes();
+        await fetchTypes();
       } else {
         notifyError(result.message || "Failed to delete category type.");
       }
     } catch (err) {
       console.error("Delete error:", err);
       notifyError("Something went wrong while deleting category type.");
+    } finally {
       setSubmitting(false);
     }
   };
 
+  const filteredTypes = allTypes.filter(type => 
+    type.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* Left: Add Form */}
-      <div className="col-span-12 lg:col-span-4">
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6 bg-white px-8 py-8 rounded-md">
-            <label className="block text-base font-medium text-black mb-2">
-              Category Type Name
-            </label>
-            {typeList.map((type, index) => (
-              <div key={index} className="flex items-center gap-2 mb-4">
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="Enter type name"
-                  value={type}
-                  onChange={(e) => handleInputChange(index, e.target.value)}
-                />
-                {index === typeList.length - 1 ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={handleAddType}
-                  >
-                    +
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="text-red-500"
-                    onClick={() => handleDeleteTypeInput(index)}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              className="tp-btn px-7 py-2 mt-2"
-              type="submit"
-              disabled={submitting}
-            >
-              Submit Types
-            </button>
-          </div>
-        </form>
+    <div className="min-h-screen bg-[#F3F4F6]">
+      {/* Header Section */}
+      <div className="bg-[#7C3AED]">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-semibold text-white">Categories</h1>
+          <p className="text-white/80 text-sm mt-1">Manage and organize your course categories</p>
+        </div>
       </div>
 
-      {/* Right: List Types */}
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">All Category Types</h3>
-          {allTypes.length === 0 ? (
-            <p className="text-gray-500">No types available.</p>
-          ) : (
-            <ul className="space-y-4">
-              {allTypes.map((type) => (
-                <li
-                  key={type.id}
-                  className="flex items-center justify-between border-b pb-2"
-                >
-                  {editingId === type.id ? (
-                    <>
+      {/* Content Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Add Section */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search categories..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="ml-4 bg-white text-[#7C3AED] px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors font-medium"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Category
+          </button>
+        </div>
+
+        {/* Table Section */}
+        <div className="bg-white rounded-lg shadow">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">NAME</th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">TYPE</th>
+                <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTypes.map((type) => (
+                <tr key={type.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                  <td className="py-4 px-6">
+                    {editingId === type.id ? (
                       <input
                         value={editedName}
                         onChange={(e) => setEditedName(e.target.value)}
-                        className="input input-bordered w-full max-w-xs"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
-                      <div className="flex gap-2">
+                    ) : (
+                      <span className="text-gray-800">{type.name}</span>
+                    )}
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                      Course
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    {editingId === type.id ? (
+                      <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleUpdate(type.id)}
-                          className="btn btn-success btn-sm"
+                          className="text-green-600 hover:text-green-800 font-medium"
                           disabled={submitting}
                         >
                           Save
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="btn btn-outline btn-sm"
+                          className="text-gray-600 hover:text-gray-800 font-medium"
                         >
                           Cancel
                         </button>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-black text-base">{type.name}</span>
-                      <div className="flex gap-2">
+                    ) : (
+                      <div className="flex justify-end gap-4">
                         <button
                           onClick={() => handleEdit(type)}
-                          className="btn btn-outline btn-sm"
+                          className="text-purple-600 hover:text-purple-800"
                           disabled={submitting}
                         >
-                          Edit
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
                         </button>
                         <button
                           onClick={() => handleDelete(type.id)}
-                          className="btn btn-error btn-sm"
+                          className="text-red-600 hover:text-red-800"
                           disabled={submitting}
                         >
-                          Delete
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
-                    </>
-                  )}
-                </li>
+                    )}
+                  </td>
+                </tr>
               ))}
-            </ul>
-          )}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Add Category Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-[400px]">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Add New Category</h2>
+            <form onSubmit={handleAddCategory}>
+              <div className="mb-4">
+                <label htmlFor="categoryName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Name
+                </label>
+                <input
+                  id="categoryName"
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter category name"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-[#7C3AED] text-white px-4 py-2 rounded-lg hover:bg-[#6D28D9] transition-colors disabled:opacity-50"
+                >
+                  {submitting ? "Adding..." : "Add Category"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

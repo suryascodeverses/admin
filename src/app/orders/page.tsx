@@ -1,18 +1,13 @@
 import Wrapper from "@/layout/wrapper";
-import Breadcrumb from "../components/breadcrumb/breadcrumb";
-import OrderArea from "../components/orders/order-area";
+import OrdersTable from "../components/orders/orders-table";
 
 const OrdersPage = () => {
   return (
     <Wrapper>
       <div className="body-content px-8 py-8 bg-slate-100">
-        {/* breadcrumb start */}
-        <Breadcrumb title="Orders" subtitle="Order List" />
-        {/* breadcrumb end */}
-
-        {/* order area start */}
-        <OrderArea />
-        {/* order area end */}
+        <div className="bg-white rounded-lg p-6">
+          <OrdersTable />
+        </div>
       </div>
     </Wrapper>
   );

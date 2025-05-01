@@ -17,8 +17,6 @@ import Received from "./received";
 import TotalOrders from "./total-orders";
 import MonthSales from "./month-sales";
 import Sales from "./sales";
-import Edit from "./edit";
-import Delete from "./delete";
 import Prev from "./prev";
 import Next from "./next";
 import Drug from "./drug";
@@ -30,6 +28,50 @@ import Camera from "./camera";
 import CameraTwo from "./camera-2";
 import Leaf from "./leaf";
 import StuffUser from "./stuff-user";
+import DeleteNew from "./delete-new";
+import EditNew from "./edit-new";
+
+interface SVGProps {
+  className?: string;
+}
+
+export const Upload: React.FC<SVGProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className || "w-6 h-6"}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+      />
+    </svg>
+  );
+};
+
+export const Plus: React.FC<SVGProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className || "w-6 h-6"}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 4.5v15m7.5-7.5h-15"
+      />
+    </svg>
+  );
+};
 
 export {
   Categories,
@@ -59,9 +101,10 @@ export {
   Received,
   Sales,
   TotalOrders,
-  Delete,
-  Edit,
   Next,
   Prev,
   SmClose,
-}
+};
+
+export const Delete = DeleteNew;
+export const Edit = EditNew;

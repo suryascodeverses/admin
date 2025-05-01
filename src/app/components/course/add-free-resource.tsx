@@ -22,6 +22,7 @@ export default function FreeResourcesPage() {
     type: "pdf",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const typeOptions = [
     { value: "pdf", label: "PDF" },
     { value: "video", label: "Video" },
@@ -56,6 +57,11 @@ export default function FreeResourcesPage() {
     setResources(updated);
   };
 
+  const handleAddClick = () => {
+    setShowAddForm(true);
+    setResources([{ title: "", type: "pdf" }]);
+  };
+
   const handleAddRow = () => {
     setResources([...resources, { title: "", type: "pdf" }]);
   };
@@ -76,18 +82,18 @@ export default function FreeResourcesPage() {
 
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/free-resources/bulk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(resources),
       });
+      const data = await res.json();
       setSubmitting(false);
 
-      const data = await res.json();
       if (res.ok) {
         notifySuccess("Resources added successfully.");
         setResources([{ title: "", type: "pdf" }]);
+        setShowAddForm(false);
         fetchResources();
       } else {
         notifyError(data.message || "Failed to add resources.");
@@ -107,15 +113,14 @@ export default function FreeResourcesPage() {
   const handleUpdate = async (id: string) => {
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/free-resources/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
       });
+      const data = await res.json();
       setSubmitting(false);
 
-      const data = await res.json();
       if (res.ok) {
         notifySuccess("Resource updated successfully.");
         setEditingId(null);
@@ -133,13 +138,12 @@ export default function FreeResourcesPage() {
   const handleDelete = async (id: string) => {
     try {
       setSubmitting(true);
-
       const res = await fetch(`${base_api}/api/free-resources/${id}`, {
         method: "DELETE",
       });
+      const data = await res.json();
       setSubmitting(false);
 
-      const data = await res.json();
       if (res.ok) {
         notifySuccess("Resource deleted successfully.");
         fetchResources();
@@ -154,204 +158,240 @@ export default function FreeResourcesPage() {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6">
+    <div>
+      {/* Header Section */}
+      <div className="bg-[#7C3AED] rounded-2xl p-6 mb-6">
+        <h2 className="text-white text-2xl font-semibold">Course Materials</h2>
+        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        <div className="flex justify-between items-center">
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search materials..."
+              className="w-full bg-white/10 text-white placeholder-white/60 border-0 rounded-lg py-2 px-4 pl-10"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-white/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <button 
+            onClick={handleAddClick}
+            className="bg-white text-[#7C3AED] px-4 py-2 rounded-lg flex items-center gap-2 ml-4"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Material
+          </button>
+        </div>
+      </div>
+
       {/* Form Section */}
-      <div className="col-span-12 lg:col-span-4">
-        <form onSubmit={handleSubmit}>
-          <div className="bg-white p-6 rounded-md shadow">
-            <h3 className="text-lg font-bold mb-4">Add Free Resources</h3>
+      {showAddForm && (
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Add New Material</h3>
+            <button
+              onClick={() => setShowAddForm(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
             {resources.map((res, i) => (
-              <div key={i} className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Resource title"
-                  className="input input-bordered w-full mb-2"
-                  value={res.title}
-                  onChange={(e) =>
-                    handleInputChange(i, "title", e.target.value)
-                  }
-                />
-
-                <ReactSelect
-                  className="mb-6 w-full"
-                  // value={
-                  //   selectedCategory
-                  //     ? {
-                  //         value: selectedCategoryId,
-                  //         label: selectedCategory.name,
-                  //       }
-                  //     : null
-                  // }
-                  onChange={(selectedOption: any) =>
-                    handleInputChange(i, "type", selectedOption?.value)
-                  }
-                  options={[
-                    {
-                      value: "video",
-                      label: "Video",
-                    },
-                    {
-                      value: "pdf",
-                      label: "PDF",
-                    },
-                  ]}
-                  placeholder="Select Category"
-                />
-
-                {/* <select
-                  className="select select-bordered w-full mb-2"
-                  value={res.type}
-                  onChange={(e) => handleInputChange(i, "type", e.target.value)}
-                >
-                  <option value="pdf">PDF</option>
-                  <option value="video">Video</option>
-                </select> */}
-                <div className="flex justify-between">
-                  {i === resources.length - 1 ? (
+              <div key={i} className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Enter resource title"
+                    className="input input-bordered w-full py-3 px-4 rounded-lg"
+                    value={res.title}
+                    onChange={(e) => handleInputChange(i, "title", e.target.value)}
+                  />
+                  <ReactSelect
+                    className="w-full"
+                    value={typeOptions.find(option => option.value === res.type)}
+                    onChange={(selectedOption: any) =>
+                      handleInputChange(i, "type", selectedOption?.value)
+                    }
+                    options={typeOptions}
+                    placeholder="Select Resource Type"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        padding: '4px',
+                        borderRadius: '0.5rem',
+                        borderColor: '#e5e7eb'
+                      })
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-4">
+                  {resources.length > 1 && (
                     <button
                       type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={handleAddRow}
-                    >
-                      + Add Another
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="text-red-500"
+                      className="text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
                       onClick={() => handleRemoveRow(i)}
                     >
-                      × Remove
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Remove
+                    </button>
+                  )}
+                  {i === resources.length - 1 && (
+                    <button
+                      type="button"
+                      className="text-[#7C3AED] hover:text-[#6D28D9] transition-colors flex items-center gap-1 ml-auto"
+                      onClick={handleAddRow}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add Another
                     </button>
                   )}
                 </div>
               </div>
             ))}
-            <button
-              type="submit"
-              className="btn btn-primary w-full mt-4"
-              disabled={submitting}
-            >
-              Submit
-            </button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                onClick={() => setShowAddForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-[#6D28D9] disabled:opacity-50 transition-colors flex items-center gap-2"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : (
+                  'Submit'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Table Section */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-4 px-6 text-gray-600 font-medium">TITLE</th>
+              <th className="text-left py-4 px-6 text-gray-600 font-medium">TYPE</th>
+              <th className="text-left py-4 px-6 text-gray-600 font-medium">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {savedResources.map((resource) => (
+              <tr key={resource.id} className="border-b last:border-b-0">
+                <td className="py-4 px-6">{resource.title}</td>
+                <td className="py-4 px-6">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    resource.type === 'pdf' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {resource.type.toUpperCase()}
+                  </span>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleEdit(resource)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(resource.id!)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {savedResources.length === 0 && (
+              <tr>
+                <td colSpan={3} className="text-center py-4 text-gray-500">
+                  No materials available
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* List Section */}
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white p-6 rounded-md shadow">
-          <h3 className="text-xl font-semibold mb-4">All Free Resources</h3>
-          {savedResources.length === 0 ? (
-            <p className="text-gray-500">No free resources available.</p>
-          ) : (
-            <table className="table w-full">
-              <thead className="thead-dark">
-                <tr>
-                  <th scope="col" style={{ width: "50%", textAlign: "start" }}>
-                    Title
-                  </th>
-                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
-                    Type
-                  </th>
-                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {savedResources.map((res) => (
-                  <tr key={res.id}>
-                    {editingId === res.id ? (
-                      <>
-                        <td>
-                          <input
-                            type="text"
-                            className="input input-bordered w-full"
-                            value={editData.title}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                title: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <ReactSelect
-                            className="w-full mb-4"
-                            value={
-                              typeOptions.find(
-                                (option) => option.value === editData.type
-                              ) || null
-                            }
-                            onChange={(selectedOption) =>
-                              setEditData({
-                                ...editData,
-                                type: selectedOption?.value as "pdf" | "video",
-                              })
-                            }
-                            options={typeOptions}
-                            placeholder="Select Type"
-                          />
-                          {/* <select
-                            className="select select-bordered w-full"
-                            value={editData.type}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                type: e.target.value as any,
-                              })
-                            }
-                          >
-                            <option value="pdf">PDF</option>
-                            <option value="video">Video</option>
-                          </select> */}
-                        </td>
-                        <td className="flex gap-2">
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleUpdate(res.id!)}
-                            disabled={submitting}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => setEditingId(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>{res.title}</td>
-                        <td>{res.type}</td>
-                        <td className="flex gap-2">
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleEdit(res)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-sm btn-error"
-                            onClick={() => handleDelete(res.id!)}
-                            disabled={submitting}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* Edit Modal */}
+      {editingId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit Resource</h3>
+            <input
+              type="text"
+              className="input input-bordered w-full mb-4"
+              value={editData.title}
+              onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+            />
+            <ReactSelect
+              className="mb-4"
+              value={typeOptions.find((option) => option.value === editData.type)}
+              onChange={(selectedOption) =>
+                setEditData({
+                  ...editData,
+                  type: selectedOption?.value as "pdf" | "video",
+                })
+              }
+              options={typeOptions}
+              placeholder="Select Type"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => handleUpdate(editingId)}
+                disabled={submitting}
+              >
+                Save
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => setEditingId(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

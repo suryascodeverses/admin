@@ -38,54 +38,58 @@ const LoginForm = () => {
     }
   };
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mb-5">
-        <p className="mb-0 text-base text-black">
-          Email <span className="text-red">*</span>
-        </p>
-        <input
-          {...register("email", { required: `Email is required!` })}
-          name="email"
-          id="email"
-          className="input w-full h-[49px] rounded-md border border-gray6 px-6 text-base"
-          type="email"
-          placeholder="Enter Your Email"
-        />
-        <ErrorMsg msg={errors.email?.message as string} />
-      </div>
-      <div className="mb-5">
-        <p className="mb-0 text-base text-black">
-          Password <span className="text-red">*</span>
-        </p>
-        <input
-          {...register("password", { required: `Password is required!` })}
-          id="password"
-          className="input w-full h-[49px] rounded-md border border-gray6 px-6 text-base"
-          type="password"
-          placeholder="Password"
-        />
-        <ErrorMsg msg={errors.password?.message as string} />
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="tp-checkbox flex items-start space-x-2 mb-3">
-          <input id="product-1" type="checkbox" />
-          <label htmlFor="product-1" className="text-tiny">
-            Remember Me
-          </label>
-        </div>
-        {/* <div className="mb-4">
-          <a
-            href="forgot.html"
-            className="text-tiny font-medium text-theme border-b border-transparent hover:border-theme"
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Login Now.</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("email", { required: `Email is required!` })}
+              name="email"
+              id="email"
+              className="input-base w-full h-[44px]"
+              type="email"
+              placeholder="Enter your email"
+            />
+            <ErrorMsg msg={errors.email?.message as string} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("password", { required: `Password is required!` })}
+              id="password"
+              className="input-base w-full h-[44px]"
+              type="password"
+              placeholder="Enter your password"
+            />
+            <ErrorMsg msg={errors.password?.message as string} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <input
+                id="remember-me"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="remember-me" className="text-sm text-gray-600">
+                Remember me
+              </label>
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="btn-primary w-full h-[44px] flex items-center justify-center mt-2"
           >
-            Forgot Password ?
-          </a>
-        </div> */}
+            Sign In
+          </button>
+        </form>
       </div>
-      <button type="submit" className="tp-btn h-[49px] w-full justify-center">
-        Sign In
-      </button>
-    </form>
+    </div>
   );
 };
 

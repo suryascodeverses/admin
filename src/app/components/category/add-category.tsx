@@ -2,6 +2,8 @@
 import { notifyError, notifySuccess } from "@/utils/toast";
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
+import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon, FolderPlusIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 // Add these if not already available
 // import { notifySuccess, notifyError } from "@/utils/notify"; // Adjust this import path to your project
 
@@ -18,6 +20,7 @@ type CategoryType = {
 type CategoryField = keyof Category;
 
 const CategoryForm = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryList, setCategoryList] = useState([
     { name: "", categoryTypeId: "" },
   ]);
@@ -26,6 +29,7 @@ const CategoryForm = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({ name: "", categoryTypeId: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchCategoryTypes();
@@ -179,265 +183,305 @@ const CategoryForm = () => {
       setSubmitting(false);
     }
   };
+
+  const filteredCategories = allCategories.filter(cat => 
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    categoryTypes.find(type => type.id === cat.categoryTypeId)?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* Left: Category Form */}
-      <div className="col-span-12 lg:col-span-4">
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6 bg-white px-8 py-8 rounded-md">
-            <label className="block text-base font-medium text-black mb-2">
-              Add Categories
-            </label>
-            {categoryList.map((cat, index) => (
-              <div key={index} className="mb-4">
+    <div className="space-y-6">
+      {/* Header with Search and Add Button */}
+      <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-white font-heading tracking-tight">Categories</h2>
+            <p className="text-indigo-100 mt-2 font-medium">Manage and organize your course categories</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
                 <input
                   type="text"
-                  className="input input-bordered w-full mb-2"
-                  placeholder="Category name"
-                  value={cat.name}
-                  onChange={(e) =>
-                    handleInputChange(index, "name", e.target.value)
-                  }
-                />
-                <ReactSelect
-                  className="mb-2 w-full"
-                  value={
-                    cat.categoryTypeId
-                      ? {
-                          value: cat.categoryTypeId,
-                          label: categoryTypes.find(
-                            (type: any) => type.id === cat.categoryTypeId
-                          )?.name,
-                        }
-                      : null
-                  }
-                  onChange={(selectedOption) =>
-                    handleInputChange(
-                      index,
-                      "categoryTypeId",
-                      selectedOption?.value || ""
-                    )
-                  }
-                  options={categoryTypes.map((type: any) => ({
-                    value: type.id,
-                    label: type.name,
-                  }))}
-                />
-                {/* <select
-                  className="select select-bordered w-full mb-2"
-                  value={cat.categoryTypeId}
-                  onChange={(e) =>
-                    handleInputChange(index, "categoryTypeId", e.target.value)
-                  }
-                >
-                  <option value="">Select category type</option>
-                  {categoryTypes.map((type: any) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select> */}
-                <div className="flex justify-between">
-                  {index === categoryList.length - 1 ? (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={handleAddCategoryInput}
-                    >
-                      + Add Another
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="text-red-500"
-                      onClick={() => handleDeleteCategoryInput(index)}
-                    >
-                      × Remove
-                    </button>
-                  )}
-                </div>
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-indigo-400/30 bg-white/10 text-white placeholder-indigo-200 focus:bg-white/20 focus:border-indigo-300 transition-all duration-200 w-full md:w-64 font-medium"
+              />
+              <svg className="absolute left-3 top-3 h-5 w-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               </div>
-            ))}
             <button
-              className="tp-btn px-7 py-2 mt-4"
-              type="submit"
-              disabled={submitting}
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
             >
-              Submit
+              <FolderPlusIcon className="h-5 w-5" />
+              Add Category
             </button>
           </div>
-        </form>
-      </div>
-
-      {/* Right: Category List */}
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">All Categories</h3>
-          {allCategories.length === 0 ? (
-            <p className="text-gray-500">No categories available.</p>
-          ) : (
-            <table className="table table-bordered table-striped mt-3 w-full">
-              {" "}
-              <thead className="thead-dark">
-                {" "}
-                <tr>
-                  {" "}
-                  <th scope="col" style={{ width: "50%", textAlign: "start" }}>
-                    Name
-                  </th>{" "}
-                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
-                    Type
-                  </th>{" "}
-                  <th scope="col" style={{ width: "25%", textAlign: "start" }}>
-                    Actions
-                  </th>{" "}
-                </tr>{" "}
-              </thead>{" "}
-              <tbody>
-                {" "}
-                {allCategories.map((cat: any) => (
-                  <tr key={cat.id}>
-                    {" "}
-                    {editingId === cat.id ? (
-                      <>
-                        {" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-6 px-0">
-                            {" "}
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={editData.name}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  name: e.target.value,
-                                })
-                              }
-                            />{" "}
-                          </div>{" "}
-                        </td>{" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-6 px-0">
-                            {" "}
-                            <ReactSelect
-                              className="mb-2"
-                              value={
-                                categoryTypes.find(
-                                  (type: any) =>
-                                    type.id === editData.categoryTypeId
-                                )
-                                  ? {
-                                      value: editData.categoryTypeId,
-                                      label: categoryTypes.find(
-                                        (type: any) =>
-                                          type.id === editData.categoryTypeId
-                                      )?.name,
-                                    }
-                                  : null
-                              }
-                              onChange={(selectedOption) =>
-                                setEditData({
-                                  ...editData,
-                                  categoryTypeId: selectedOption?.value || "",
-                                })
-                              }
-                              options={categoryTypes.map((type: any) => ({
-                                value: type.id,
-                                label: type.name,
-                              }))}
-                            />
-                            {/* <select
-                              className="form-control"
-                              value={editData.categoryTypeId}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  categoryTypeId: e.target.value,
-                                })
-                              }
-                            >
-                              {" "}
-                              <option value="">Select type</option>{" "}
-                              {categoryTypes.map((type: any) => (
-                                <option key={type.id} value={type.id}>
-                                  {" "}
-                                  {type.name}{" "}
-                                </option>
-                              ))}{" "}
-                            </select>{" "} */}
-                          </div>{" "}
-                        </td>{" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-6 px-0 d-flex gap-2">
-                            {" "}
-                            <button
-                              className="btn btn-success btn-sm mr-2"
-                              onClick={() => handleUpdate(cat.id)}
-                              disabled={submitting}
-                            >
-                              {" "}
-                              Save{" "}
-                            </button>{" "}
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => setEditingId(null)}
-                            >
-                              {" "}
-                              Cancel{" "}
-                            </button>{" "}
-                          </div>{" "}
-                        </td>{" "}
-                      </>
-                    ) : (
-                      <>
-                        {" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-6 px-0">
-                            {cat.name}
-                          </div>{" "}
-                        </td>{" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-3 px-0">
-                            {" "}
-                            {cat.categoryCategoryType?.name || "-"}{" "}
-                          </div>{" "}
-                        </td>{" "}
-                        <td>
-                          {" "}
-                          <div className="col-12 col-md-3 px-0 d-flex gap-2">
-                            {" "}
-                            <button
-                              className="btn btn-outline-primary btn-sm mr-2"
-                              onClick={() => handleEdit(cat)}
-                            >
-                              {" "}
-                              Edit{" "}
-                            </button>{" "}
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleDelete(cat.id)}
-                              disabled={submitting}
-                            >
-                              {" "}
-                              Delete{" "}
-                            </button>{" "}
-                          </div>{" "}
-                        </td>{" "}
-                      </>
-                    )}{" "}
-                  </tr>
-                ))}{" "}
-              </tbody>{" "}
-            </table>
-          )}
         </div>
       </div>
+
+      {/* Categories Table */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr className="bg-gray-50">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Name
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Type
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              <AnimatePresence>
+                {filteredCategories.map((category: any, index) => (
+                  <motion.tr
+                    key={category.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="hover:bg-gray-50/50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4">
+                      {editingId === category.id ? (
+                            <input
+                              type="text"
+                          className="w-full px-3 py-2 border border-indigo-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              value={editData.name}
+                          onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                        />
+                      ) : (
+                        <div className="text-sm font-semibold text-gray-900">{category.name}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {editingId === category.id ? (
+                            <ReactSelect
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          options={categoryTypes.map(type => ({
+                                value: type.id,
+                            label: type.name
+                          }))}
+                          value={categoryTypes
+                            .filter(type => type.id === editData.categoryTypeId)
+                            .map(type => ({ value: type.id, label: type.name }))[0]}
+                          onChange={(selected: any) =>
+                                setEditData({
+                                  ...editData,
+                              categoryTypeId: selected?.value || ""
+                            })
+                          }
+                          placeholder="Select type..."
+                          isClearable
+                        />
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          {categoryTypes.find(type => type.id === category.categoryTypeId)?.name}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {editingId === category.id ? (
+                        <div className="flex justify-end space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleUpdate(category.id)}
+                              disabled={submitting}
+                            className="inline-flex items-center px-3.5 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm"
+                          >
+                            Save
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                              onClick={() => setEditingId(null)}
+                            className="inline-flex items-center px-3.5 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm"
+                          >
+                            Cancel
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end space-x-3">
+                          <motion.button
+                            whileHover={{ scale: 1.1, color: '#4F46E5' }}
+                            onClick={() => handleEdit(category)}
+                            className="text-indigo-600 hover:text-indigo-900 transition-colors duration-200"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1, color: '#DC2626' }}
+                            onClick={() => handleDelete(category.id)}
+                            disabled={submitting}
+                            className="text-red-600 hover:text-red-900 transition-colors duration-200"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </motion.button>
+                        </div>
+                      )}
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+              {filteredCategories.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center">
+                      <FolderPlusIcon className="h-16 w-16 text-gray-400" />
+                      <h3 className="mt-3 text-lg font-semibold text-gray-900">No categories</h3>
+                      <p className="mt-2 text-sm text-gray-500">Get started by creating a new category.</p>
+                      <div className="mt-6">
+                            <button
+                          onClick={() => setIsModalOpen(true)}
+                          className="inline-flex items-center px-5 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                        >
+                          <PlusIcon className="h-5 w-5 mr-2" />
+                          Add Category
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                  </tr>
+              )}
+            </tbody>
+            </table>
+        </div>
+      </div>
+
+      {/* Add Category Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed inset-x-4 top-[5%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-lg z-50"
+            >
+              <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                  <h3 className="text-xl font-bold text-gray-900">Add New Category</h3>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-500 transition-colors duration-200"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="space-y-4">
+                      {categoryList.map((cat, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="relative bg-gray-50/70 p-5 rounded-lg border border-gray-200/70"
+                        >
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Category Name
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                placeholder="Enter category name"
+                                value={cat.name}
+                                onChange={(e) => handleInputChange(index, "name", e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Category Type
+                              </label>
+                              <ReactSelect
+                                className="react-select-container"
+                                classNamePrefix="react-select"
+                                options={categoryTypes.map(type => ({
+                                  value: type.id,
+                                  label: type.name
+                                }))}
+                                value={categoryTypes
+                                  .filter(type => type.id === cat.categoryTypeId)
+                                  .map(type => ({ value: type.id, label: type.name }))[0]}
+                                onChange={(selected: any) =>
+                                  handleInputChange(index, "categoryTypeId", selected?.value || "")
+                                }
+                                placeholder="Select type..."
+                                isClearable
+                              />
+                            </div>
+                          </div>
+                          {categoryList.length > 1 && (
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              type="button"
+                              onClick={() => handleDeleteCategoryInput(index)}
+                              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                            >
+                              <XMarkIcon className="h-5 w-5" />
+                            </motion.button>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    <div className="sticky bottom-0 pt-4 bg-white border-t border-gray-100 space-y-3">
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        type="button"
+                        onClick={handleAddCategoryInput}
+                        className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                      >
+                        <PlusIcon className="h-5 w-5 mr-2" />
+                        Add Another Category
+                      </motion.button>
+                      
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        {submitting ? (
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          "Add Categories"
+                        )}
+                      </motion.button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

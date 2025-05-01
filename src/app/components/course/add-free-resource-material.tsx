@@ -13,6 +13,7 @@ const FreeResourceMaterialManagement = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [categoryTypes, setCategoryTypes] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -134,177 +135,236 @@ const FreeResourceMaterialManagement = () => {
     setSubmitting(false);
   };
 
+  const handleAddNew = () => {
+    setForm({});
+    setMediaFile(null);
+    setEdit(true);
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12 lg:col-span-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-8 py-8 rounded-md mb-6"
-        >
-          <h4 className="text-[22px] mb-4">
-            Add / Edit Free Resource Material
-          </h4>
+    <div>
+      {/* Header Section */}
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <span>Home</span>
+        <span>•</span>
+        <span>Course Material</span>
+      </div>
 
-          <input
-            type="text"
-            name="title"
-            value={form.title || ""}
-            onChange={handleChange}
-            placeholder="Title"
-            className="input input-bordered w-full h-[44px] px-4 mb-4"
-            required
-          />
-
-          <ReactSelect
-            placeholder="Select Category Type"
-            className="mb-4"
-            value={
-              // categoryTypes.find((c) => c.id === form.categoryTypeId) && {
-              form.categoryTypeId
-                ? {
-                    value: form.categoryTypeId,
-                    label: categoryTypes.find(
-                      (c) => c.id === form.categoryTypeId
-                    )?.name,
-                  }
-                : null
-            }
-            onChange={(opt) => handleSelectChange("categoryTypeId", opt?.value)}
-            options={categoryTypes.map((c) => ({ value: c.id, label: c.name }))}
-          />
-
-          <ReactSelect
-            placeholder="Select Category"
-            className="mb-4"
-            value={
-              // categories.find((c) => c.id === form.categoryId) && {
-              form.categoryId
-                ? {
-                    value: form.categoryId,
-                    label: categories.find((c) => c.id === form.categoryId)
-                      ?.name,
-                  }
-                : null
-            }
-            onChange={(opt) => handleSelectChange("categoryId", opt?.value)}
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-          />
-
-          <ReactSelect
-            placeholder="Select Free Resource"
-            className="mb-4"
-            value={
-              // freeResources.find((r) => r.id === form.freeResourceId) && {
-              form.freeResourceId
-                ? {
-                    value: form.freeResourceId,
-                    label: freeResources.find(
-                      (r) => r.id === form.freeResourceId
-                    )?.title,
-                  }
-                : null
-            }
-            onChange={(opt) => handleSelectChange("freeResourceId", opt?.value)}
-            options={freeResources.map((r) => ({
-              value: r.id,
-              label: r.title,
-            }))}
-          />
-
-          {freeResources.find((r) => r.id === form.freeResourceId)?.type ===
-          "video" ? (
+      {/* Course Materials Header */}
+      <div className="bg-[#7C3AED] rounded-lg p-6 mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-2">Course Materials</h2>
+        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        
+        <div className="flex justify-between items-center">
+          <div className="relative flex-1 max-w-md">
             <input
               type="text"
-              name="media"
-              value={edit ? form.media?.path : form.media}
-              onChange={handleChange}
-              placeholder="Video URL"
-              className="input input-bordered w-full h-[44px] px-4 mb-4"
-              required
+              placeholder="Search materials..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 pl-10 bg-white/10 text-white placeholder-white/70 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30"
             />
-          ) : freeResources.find((r) => r.id === form.freeResourceId)?.type ===
-            "pdf" ? (
-            <div className="my-8">
-              <div>
-                <input
-                  onChange={handleMediaUpload}
-                  type="file"
-                  accept="application/pdf"
-                  id="product_img"
-                  className="hidden"
-                  required={!form?.id}
-                />
-                <label
-                  htmlFor="product_img"
-                  className="text-tiny w-full inline-block py-1 px-4 rounded-md border border-gray6 text-center hover:cursor-pointer hover:bg-theme hover:text-white hover:border-theme transition"
-                >
-                  Upload Pdf
-                </label>
-              </div>
-              {mediaFile && <span className="text-md"> {mediaFile.name}</span>}
-            </div>
-          ) : (
-            // <input
-            //   type="file"
-            //   accept="application/pdf"
-            //   onChange={handleMediaUpload}
-            //   className="file-input file-input-bordered w-full mb-4"
-            //   required={!form?.id}
-            // />
-            <></>
-          )}
-
-          <button
-            type="submit"
-            className="tp-btn px-6 py-2"
-            disabled={submitting}
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <button 
+            onClick={handleAddNew}
+            className="bg-white text-[#7C3AED] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-white/90 transition-colors"
           >
-            {form?.id ? "Update" : "Add"}
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Add Material
           </button>
-        </form>
-      </div>
-
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">Saved Materials</h3>
-          {materials.length === 0 ? (
-            <p className="text-gray-500">No materials available.</p>
-          ) : (
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left">Title</th>
-                  <th className="text-left">Free Resource</th>
-                  <th className="text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {materials.map((mat) => (
-                  <tr key={mat.id}>
-                    <td>{mat.title}</td>
-                    <td>{mat.materialFreeResource?.title}</td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleEdit(mat)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(mat.id)}
-                        disabled={submitting}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </div>
       </div>
+
+      {/* Materials Table */}
+      <div className="bg-white rounded-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Free Resource</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {materials
+              .filter(mat => mat.title.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((mat) => (
+                <tr key={mat.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mat.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mat.materialFreeResource?.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(mat)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(mat.id)}
+                        disabled={submitting}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add/Edit Form Modal */}
+      {edit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-xl font-semibold">{form?.id ? 'Edit' : 'Add'} Material</h4>
+              <button
+                onClick={() => setEdit(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="text"
+                name="title"
+                value={form.title || ""}
+                onChange={handleChange}
+                placeholder="Title"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                required
+              />
+
+              <ReactSelect
+                placeholder="Select Category Type"
+                className="mb-4"
+                value={form.categoryTypeId ? {
+                  value: form.categoryTypeId,
+                  label: categoryTypes.find((c) => c.id === form.categoryTypeId)?.name,
+                } : null}
+                onChange={(opt) => handleSelectChange("categoryTypeId", opt?.value)}
+                options={categoryTypes.map((c) => ({ value: c.id, label: c.name }))}
+              />
+
+              <ReactSelect
+                placeholder="Select Category"
+                className="mb-4"
+                value={form.categoryId ? {
+                  value: form.categoryId,
+                  label: categories.find((c) => c.id === form.categoryId)?.name,
+                } : null}
+                onChange={(opt) => handleSelectChange("categoryId", opt?.value)}
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              />
+
+              <ReactSelect
+                placeholder="Select Free Resource"
+                className="mb-4"
+                value={form.freeResourceId ? {
+                  value: form.freeResourceId,
+                  label: freeResources.find((r) => r.id === form.freeResourceId)?.title,
+                } : null}
+                onChange={(opt) => handleSelectChange("freeResourceId", opt?.value)}
+                options={freeResources.map((r) => ({ value: r.id, label: r.title }))}
+              />
+
+              {freeResources.find((r) => r.id === form.freeResourceId)?.type === "video" ? (
+                <input
+                  type="text"
+                  name="media"
+                  value={edit ? form.media?.path : form.media}
+                  onChange={handleChange}
+                  placeholder="Video URL"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                  required
+                />
+              ) : freeResources.find((r) => r.id === form.freeResourceId)?.type === "pdf" ? (
+                <div className="space-y-2">
+                  <input
+                    onChange={handleMediaUpload}
+                    type="file"
+                    accept="application/pdf"
+                    id="product_img"
+                    className="hidden"
+                    required={!form?.id}
+                  />
+                  <label
+                    htmlFor="product_img"
+                    className="block w-full px-4 py-2 text-center border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    Upload PDF
+                  </label>
+                  {form?.id && form.media?.path && !mediaFile && (
+                    <p className="text-sm text-gray-600">
+                      Current file: {form.media.path.split('/').pop()}
+                    </p>
+                  )}
+                  {mediaFile && (
+                    <p className="text-sm text-gray-600">
+                      New file selected: {mediaFile.name}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setEdit(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#7C3AED] text-white px-6 py-2 rounded-lg hover:bg-[#6D28D9] disabled:opacity-50"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : form?.id ? 'Update' : 'Add'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

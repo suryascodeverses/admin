@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
 import { notifySuccess, notifyError } from "@/utils/toast"; // adjust if needed
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface Course {
   id: string;
@@ -31,6 +32,8 @@ const CourseManagement: React.FC = () => {
   // const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchCourses = async () => {
     try {
@@ -160,156 +163,217 @@ const CourseManagement: React.FC = () => {
     }
   };
 
-  return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12 lg:col-span-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white px-8 py-8 rounded-md mb-6"
-        >
-          <h4 className="text-[22px] mb-4">Add / Edit Course</h4>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="title"
-              value={form.title || ""}
-              onChange={handleChange}
-              placeholder="Course Title"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <textarea
-              name="description"
-              value={form.description || ""}
-              onChange={handleChange}
-              placeholder="Course Description"
-              className="textarea textarea-bordered w-full px-4"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="video"
-              value={form.video || ""}
-              onChange={handleChange}
-              placeholder="Video URL"
-              className="input input-bordered w-full h-[44px] px-4"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <ReactSelect
-              className="w-full mb-4"
-              value={
-                form?.categoryTypeId
-                  ? {
-                      value: form.categoryTypeId,
-                      label: categoryTypes.find(
-                        (type) => type.id === form.categoryTypeId
-                      )?.name,
-                    }
-                  : null
-              }
-              onChange={(selectedOption) =>
-                handleChange({
-                  target: {
-                    name: "categoryTypeId",
-                    value: selectedOption?.value || "",
-                  },
-                } as React.ChangeEvent<HTMLInputElement>)
-              }
-              options={categoryTypes.map((type) => ({
-                value: type.id,
-                label: type.name,
-              }))}
-              placeholder="Select Category Type"
-              isClearable
-            />
-          </div>
-          {/* <div className="mb-4">
-            <ReactSelect
-              className="w-full mb-4"
-              value={
-                categories.find((cat) => cat.id === form?.categoryId) && {
-                  value: form?.categoryId,
-                  label: categories.find((cat) => cat.id === form?.categoryId)
-                    ?.name,
-                }
-              }
-              onChange={(selectedOption) =>
-                handleChange({
-                  target: {
-                    name: "categoryId",
-                    value: selectedOption?.value || "",
-                  },
-                } as React.ChangeEvent<HTMLInputElement>)
-              }
-              options={categories.map((cat) => ({
-                value: cat.id,
-                label: cat.name,
-              }))}
-              placeholder="Select Category"
-              isClearable
-            />
-          </div> */}
-          <button
-            type="submit"
-            className="tp-btn px-6 py-2"
-            disabled={submitting}
-          >
-            {form.id ? "Update Course" : "Add Course"}
-          </button>
-        </form>
-      </div>
+  const filteredCourses = courses.filter(course => 
+    course.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white px-8 py-6 rounded-md">
-          <h3 className="text-xl font-semibold mb-4">All Courses</h3>
-          {courses.length === 0 ? (
-            <p className="text-gray-500">No courses available.</p>
-          ) : (
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  {/* <th className="text-left">Video URL</th> */}
-                  <th className="text-left">Name</th>
-                  <th className="text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {courses.map((course) => (
-                  <tr key={course.id}>
-                    {/* <td className="text-blue-600 truncate max-w-[180px]">
-                      <a href={course.video} target="_blank" rel="noopener noreferrer">
-                        {course.video}
-                      </a>
-                    </td> */}
-                    <td>{course.title}</td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleEdit(course)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(course.id)}
-                        disabled={submitting}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+  return (
+    <div className="space-y-6">
+      {/* Header with Search and Add Button */}
+      <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-white font-heading tracking-tight">Courses</h2>
+            <p className="text-indigo-100 mt-2 font-medium">Manage and organize your courses</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-indigo-400/30 bg-white/10 text-white placeholder-indigo-200 focus:bg-white/20 focus:border-indigo-300 transition-all duration-200 w-full md:w-64 font-medium"
+              />
+              <svg className="absolute left-3 top-3 h-5 w-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Course
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Course Table */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-4 font-semibold text-gray-600">NAME</th>
+                <th className="text-left py-4 font-semibold text-gray-600">TYPE</th>
+                <th className="text-right py-4 font-semibold text-gray-600">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCourses.map((course) => (
+                <tr key={course.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4">{course.title}</td>
+                  <td className="py-4">
+                    {categoryTypes.find(type => type.id === course.categoryTypeId)?.name || 'N/A'}
+                  </td>
+                  <td className="py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => handleEdit(course)}
+                        className="p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50"
+                        title="Edit course"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(course.id)}
+                        className="p-1 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50"
+                        disabled={submitting}
+                        title="Delete course"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredCourses.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="text-center py-4 text-gray-500">
+                    No courses found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add/Edit Course Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl mx-4">
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {form.id ? 'Edit Course' : 'Add New Course'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setForm({});
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Course Title
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={form.title || ""}
+                    onChange={handleChange}
+                    placeholder="Enter course title"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Course Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={form.description || ""}
+                    onChange={handleChange}
+                    placeholder="Enter course description"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    rows={4}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Video URL
+                  </label>
+                  <input
+                    type="text"
+                    name="video"
+                    value={form.video || ""}
+                    onChange={handleChange}
+                    placeholder="Enter video URL"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category Type
+                  </label>
+                  <ReactSelect
+                    value={
+                      form?.categoryTypeId
+                        ? {
+                            value: form.categoryTypeId,
+                            label: categoryTypes.find(
+                              (type) => type.id === form.categoryTypeId
+                            )?.name,
+                          }
+                        : null
+                    }
+                    onChange={(selectedOption) =>
+                      handleChange({
+                        target: {
+                          name: "categoryTypeId",
+                          value: selectedOption?.value || "",
+                        },
+                      } as React.ChangeEvent<HTMLInputElement>)
+                    }
+                    options={categoryTypes.map((type) => ({
+                      value: type.id,
+                      label: type.name,
+                    }))}
+                    placeholder="Select Category Type"
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    isClearable
+                  />
+                </div>
+                <div className="flex justify-end gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setForm({});
+                    }}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Saving...' : form.id ? 'Update Course' : 'Add Course'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

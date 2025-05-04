@@ -134,8 +134,8 @@ const AddCategoryType = () => {
       {/* Header Section */}
       <div className="bg-[#7C3AED]">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-semibold text-white">Categories</h1>
-          <p className="text-white/80 text-sm mt-1">Manage and organize your course categories</p>
+          <h1 className="text-2xl font-semibold text-white">Category Types</h1>
+          <p className="text-white/80 text-sm mt-1">Manage and organize your course Category Types</p>
         </div>
       </div>
 

@@ -144,16 +144,16 @@ const FreeResourceMaterialManagement = () => {
   return (
     <div>
       {/* Header Section */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+      {/* <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
         <span>Home</span>
         <span>•</span>
         <span>Course Material</span>
-      </div>
+      </div> */}
 
       {/* Course Materials Header */}
       <div className="bg-[#7C3AED] rounded-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold text-white mb-2">Course Materials</h2>
-        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        <h2 className="text-2xl font-semibold text-white mb-2">Free Resources Materials</h2>
+        <p className="text-white/80 mb-4">Manage and organize your Free Resources Materials</p>
         
         <div className="flex justify-between items-center">
           <div className="relative flex-1 max-w-md">

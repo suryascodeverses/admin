@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import Image from "next/image";
 import { Upload, Delete, Edit, Plus } from "@/svg";
 import Sidebar from "@/layout/sidebar";
+import { notifyError, notifySuccess } from "@/utils/toast";
 
 interface BannerFormData {
   title: string;
@@ -14,17 +15,23 @@ interface BannerFormData {
 }
 
 interface Banner {
-  id: string;
+  id?: string;
   title: string;
   description: string;
-  image: string; // base64 string
   link: string;
   status: boolean;
+  media: {
+    name: string;
+    path: string;
+    type: string;
+  };
 }
 
-function generateId() {
-  return Math.random().toString(36).substr(2, 9);
-}
+// function generateId() {
+//   return Math.random().toString(36).substr(2, 9);
+// }
+
+const base_api = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function BannerPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -41,9 +48,12 @@ export default function BannerPage() {
   } = useForm<BannerFormData>();
 
   useEffect(() => {
-    fetch('/api/banner')
-      .then(res => res.json())
-      .then(data => setBanners(Array.isArray(data) ? data : []));
+    fetch(base_api + "/api/banner")
+      .then((res) => res.json())
+      .then((data) => {
+        setBanners(Array.isArray(data.data) ? data.data : []);
+        // debugger
+      });
   }, []);
 
   const openAddModal = () => {
@@ -59,49 +69,57 @@ export default function BannerPage() {
     setValue("description", banner.description);
     setValue("link", banner.link);
     setValue("status", banner.status);
-    setImagePreview(banner.image);
+    setImagePreview(banner.media.path);
+    // console.log('Edit Modal Image URL:', banner.media.path);
     setShowModal(true);
   };
 
   const onSubmit = async (data: BannerFormData) => {
-    let base64Image = imagePreview;
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("description", data.description);
+    formData.append("link", data.link);
+    formData.append("status", String(data.status));
+
     if (data.image) {
-      base64Image = await toBase64(data.image);
+      formData.append("media", data.image);
     }
-    if (editBanner) {
-      setBanners((prev) =>
-        Array.isArray(prev)
-          ? prev.map((b) =>
-              b.id === editBanner.id
-                ? {
-                    ...b,
-                    title: data.title,
-                    description: data.description,
-                    link: data.link,
-                    status: data.status,
-                    image: base64Image,
-                  }
-                : b
-            )
-          : []
+
+    const endpoint = editBanner
+      ? `${base_api}/api/banner/${editBanner.id}`
+      : `${base_api}/api/banner`;
+    const method = editBanner ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(endpoint, {
+        method,
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to submit banner.");
+
+      const result = await res.json();
+      setBanners((prev) => {
+        if (editBanner) {
+          return prev.map((b) => (b.id === editBanner.id ? result.data : b));
+        } else {
+          return [...prev, result.data];
+        }
+      });
+
+      setShowModal(false);
+      setEditBanner(null);
+      reset();
+      setImagePreview("");
+      notifySuccess(
+        editBanner
+          ? "Banner updated successfully."
+          : "Banner added successfully."
       );
-    } else {
-      setBanners((prev) => [
-        ...(Array.isArray(prev) ? prev : []),
-        {
-          id: generateId(),
-          title: data.title,
-          description: data.description,
-          link: data.link,
-          status: data.status,
-          image: base64Image,
-        },
-      ]);
+    } catch (error) {
+      console.error(error);
+      notifyError("Failed to submit banner. Please try again.");
     }
-    setShowModal(false);
-    setEditBanner(null);
-    reset();
-    setImagePreview("");
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,15 +129,25 @@ export default function BannerPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        console.log('Preview:', reader.result);
+        console.log("Image Preview URL:", reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this banner?")) {
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`${base_api}/api/banner/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete banner.");
+
       setBanners((prev) => prev.filter((b) => b.id !== id));
+      notifySuccess("Banner deleted successfully.");
+    } catch (error) {
+      console.error(error);
+      notifyError("Failed to delete banner. Please try again.");
     }
   };
 
@@ -138,8 +166,12 @@ export default function BannerPage() {
       <div className="flex-1 p-6 ml-[300px]">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Banner Management</h2>
-            <p className="text-gray-600">Add, edit, and delete website banners</p>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Banner Management
+            </h2>
+            <p className="text-gray-600">
+              Add, edit, and delete website banners
+            </p>
           </div>
           <button
             onClick={openAddModal}
@@ -154,12 +186,24 @@ export default function BannerPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Image
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Link
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
@@ -170,55 +214,72 @@ export default function BannerPage() {
                     </td>
                   </tr>
                 )}
-                {Array.isArray(banners) && banners.map((banner) => (
-                  <tr key={banner.id}>
-                    <td className="px-4 py-3">
-                      {banner.image ? (
-                        <div className="w-16 h-10 relative">
-                          <Image
-                            src={banner.image}
-                            alt={banner.title}
-                            fill
-                            unoptimized
-                            className="object-cover rounded"
-                          />
+                {Array.isArray(banners) &&
+                  banners.map((banner) => (
+                    <tr key={banner.id}>
+                      <td className="px-4 py-3">
+                        {banner.media.path ? (
+                          <div className="w-16 h-10 relative">
+                            <Image
+                              src={banner.media.path}
+                              alt={banner.title}
+                              fill
+                              unoptimized
+                              className="object-cover rounded"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">No Image</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {banner.title}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {banner.description}
+                      </td>
+                      <td className="px-4 py-3 text-blue-600 underline break-all">
+                        {banner.link ? (
+                          <a
+                            href={banner.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {banner.link}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            banner.status
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {banner.status ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditModal(banner)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(banner.id ?? "")}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          >
+                            <Delete className="w-5 h-5" />
+                          </button>
                         </div>
-                      ) : (
-                        <span className="text-gray-300">No Image</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{banner.title}</td>
-                    <td className="px-4 py-3 text-gray-700">{banner.description}</td>
-                    <td className="px-4 py-3 text-blue-600 underline break-all">
-                      {banner.link ? (
-                        <a href={banner.link} target="_blank" rel="noopener noreferrer">{banner.link}</a>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs rounded-full ${banner.status ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        {banner.status ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(banner)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(banner.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Delete className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -241,8 +302,18 @@ export default function BannerPage() {
                     }}
                     className="text-gray-400 hover:text-gray-500 transition-colors"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -260,7 +331,9 @@ export default function BannerPage() {
                       placeholder="Enter banner title"
                     />
                     {errors.title && (
-                      <p className="mt-1.5 text-sm text-red-600">{errors.title.message}</p>
+                      <p className="mt-1.5 text-sm text-red-600">
+                        {errors.title.message}
+                      </p>
                     )}
                   </div>
                   <div>
@@ -278,7 +351,11 @@ export default function BannerPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Banner Image <span className="text-red-500">*</span>
                     </label>
-                    <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${imagePreview ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
+                    <div
+                      className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${
+                        imagePreview ? "bg-gray-50" : "hover:bg-gray-50"
+                      }`}
+                    >
                       <div className="space-y-2 text-center">
                         {imagePreview ? (
                           <div className="relative w-full h-48 bg-white rounded-lg overflow-hidden">
@@ -289,7 +366,19 @@ export default function BannerPage() {
                               unoptimized
                               className="object-contain"
                             />
-                            <img src={imagePreview} alt="Banner preview fallback" style={{ maxHeight: 192, maxWidth: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0, zIndex: 10, pointerEvents: 'none' }} />
+                            <img
+                              src={imagePreview}
+                              alt="Banner preview fallback"
+                              style={{
+                                maxHeight: 192,
+                                maxWidth: "100%",
+                                objectFit: "contain",
+                                top: 0,
+                                left: 0,
+                                zIndex: 10,
+                                pointerEvents: "none",
+                              }}
+                            />
                             <button
                               type="button"
                               onClick={() => setImagePreview("")}
@@ -374,4 +463,4 @@ export default function BannerPage() {
       </div>
     </div>
   );
-} 
+}

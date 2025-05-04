@@ -316,8 +316,8 @@ const Achievement: React.FC = () => {
       <div className="bg-[#7C3AED] px-6 py-8 rounded-lg mx-6 mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Course Materials</h1>
-            <p className="text-white/80">Manage and organize your course materials</p>
+            <h1 className="text-2xl font-semibold text-white mb-2">Achievements</h1>
+            <p className="text-white/80">Manage and organize your Achievements</p>
           </div>
           <button 
             onClick={() => {

@@ -161,8 +161,8 @@ export default function FreeResourcesPage() {
     <div>
       {/* Header Section */}
       <div className="bg-[#7C3AED] rounded-2xl p-6 mb-6">
-        <h2 className="text-white text-2xl font-semibold">Course Materials</h2>
-        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        <h2 className="text-white text-2xl font-semibold">Free Resources</h2>
+        <p className="text-white/80 mb-4">Manage and organize your Free Resources</p>
         <div className="flex justify-between items-center">
           <div className="relative flex-1 max-w-md">
             <input

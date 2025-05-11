@@ -19,7 +19,7 @@ interface CourseMaterial {
   id: string;
   title: string;
   description: string;
-  fees: string;
+  fees?: string;
   media: { name: string; path: string; type: string };
   courseId: string;
   categoryId: string;
@@ -39,7 +39,9 @@ const CourseMaterialManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    []
+  );
 
   const fetchCourses = async () => {
     try {
@@ -85,9 +87,14 @@ const CourseMaterialManagement: React.FC = () => {
 
   useEffect(() => {
     if (selectedCategoryId) {
-      const filtered = courses.filter(course => course.categoryTypeId === selectedCategoryId);
+      const filtered = courses.filter(
+        (course) => course.categoryTypeId === selectedCategoryId
+      );
       setFilteredCourses(filtered);
-      if (selectedCourseId && !filtered.find(c => c.id === selectedCourseId)) {
+      if (
+        selectedCourseId &&
+        !filtered.find((c) => c.id === selectedCourseId)
+      ) {
         setSelectedCourseId("");
       }
     } else {
@@ -124,8 +131,8 @@ const CourseMaterialManagement: React.FC = () => {
   useEffect(() => {
     if (selectedCategoryId) {
       fetch(`${base_api}/api/categories/category-by-type/${selectedCategoryId}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success) setCategories(data.data);
           else setCategories([]);
         })
@@ -152,7 +159,7 @@ const CourseMaterialManagement: React.FC = () => {
     if (e) {
       e.preventDefault();
     }
-    
+
     if (!selectedCourseId || !selectedCategoryId || !form?.categoryId) {
       notifyError("Please select category type, course, and category.");
       return;
@@ -168,11 +175,6 @@ const CourseMaterialManagement: React.FC = () => {
       return;
     }
 
-    if (!form?.fees) {
-      notifyError("Please enter fees.");
-      return;
-    }
-
     if (!form.id && !mediaFile) {
       notifyError("Please upload a media file.");
       return;
@@ -181,13 +183,15 @@ const CourseMaterialManagement: React.FC = () => {
     try {
       setSubmitting(true);
       const formData = new FormData();
-      
+
       formData.append("title", form.title.trim());
       formData.append("description", form.description.trim());
-      formData.append("fees", form.fees.toString());
       formData.append("courseId", selectedCourseId);
       formData.append("categoryId", form.categoryId);
-      
+      if (form?.fees) {
+        formData.append("fees", form.fees.toString());
+      }
+
       if (mediaFile) {
         formData.append("media", mediaFile);
       }
@@ -203,7 +207,9 @@ const CourseMaterialManagement: React.FC = () => {
       const result = await res.json();
 
       if (res.ok) {
-        notifySuccess(`Material ${form.id ? "updated" : "added"} successfully!`);
+        notifySuccess(
+          `Material ${form.id ? "updated" : "added"} successfully!`
+        );
         setForm(null);
         setMediaFile(null);
         setSelectedCategoryId("");
@@ -223,7 +229,7 @@ const CourseMaterialManagement: React.FC = () => {
   const handleEdit = async (material: CourseMaterial) => {
     setForm(material);
     setSelectedCourseId(material.courseId);
-    const course = courses.find(c => c.id === material.courseId);
+    const course = courses.find((c) => c.id === material.courseId);
     if (course) {
       setSelectedCategoryId(course.categoryTypeId);
     }
@@ -250,14 +256,14 @@ const CourseMaterialManagement: React.FC = () => {
     }
   };
 
-  const filteredMaterials = materials.filter(material =>
+  const filteredMaterials = materials.filter((material) =>
     material.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const selectedCategory = categoryTypes.find(
     (cat) => cat.id === selectedCategoryId
   );
-  
+
   const selectedCourse = courses.find(
     (course) => course.id === selectedCourseId
   );
@@ -266,8 +272,12 @@ const CourseMaterialManagement: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-[#8B5CF6] p-6 rounded-lg">
-        <h1 className="text-2xl font-semibold text-white mb-2">Course Materials</h1>
-        <p className="text-white/80 mb-4">Manage and organize your course materials</p>
+        <h1 className="text-2xl font-semibold text-white mb-2">
+          Course Materials
+        </h1>
+        <p className="text-white/80 mb-4">
+          Manage and organize your course materials
+        </p>
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:w-auto">
             <input
@@ -292,15 +302,17 @@ const CourseMaterialManagement: React.FC = () => {
             </svg>
           </div>
           <button
-            onClick={() => setForm({
-              id: "",
-              title: "",
-              description: "",
-              fees: "",
-              media: { name: "", path: "", type: "" },
-              courseId: "",
-              categoryId: "",
-            })}
+            onClick={() =>
+              setForm({
+                id: "",
+                title: "",
+                description: "",
+                fees: "",
+                media: { name: "", path: "", type: "" },
+                courseId: "",
+                categoryId: "",
+              })
+            }
             className="px-4 py-2 bg-white text-[#8B5CF6] rounded-lg hover:bg-white/90 transition-colors font-medium flex items-center gap-2"
           >
             <svg
@@ -332,7 +344,9 @@ const CourseMaterialManagement: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category Type
+            </label>
             <ReactSelect
               value={
                 selectedCategory
@@ -353,7 +367,9 @@ const CourseMaterialManagement: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Course
+            </label>
             <ReactSelect
               value={
                 selectedCourse
@@ -381,10 +397,18 @@ const CourseMaterialManagement: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">TITLE</th>
-                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">DESCRIPTION</th>
-                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">FEES</th>
-                <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">ACTIONS</th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">
+                  TITLE
+                </th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">
+                  DESCRIPTION
+                </th>
+                <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">
+                  FEES
+                </th>
+                <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">
+                  ACTIONS
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -445,7 +469,9 @@ const CourseMaterialManagement: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">{form.id ? 'Edit' : 'Add'} Course Material</h2>
+                <h2 className="text-xl font-semibold">
+                  {form.id ? "Edit" : "Add"} Course Material
+                </h2>
                 <button
                   onClick={() => {
                     setForm(null);
@@ -455,34 +481,75 @@ const CourseMaterialManagement: React.FC = () => {
                   }}
                   className="text-gray-400 hover:text-gray-500"
                 >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
-              
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit(e);
-              }} className="space-y-4">
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category Type
+                    </label>
                     <ReactSelect
-                      value={selectedCategory ? { value: selectedCategoryId, label: selectedCategory.name } : null}
-                      onChange={(option) => setSelectedCategoryId(option?.value || "")}
-                      options={categoryTypes.map(cat => ({ value: cat.id, label: cat.name }))}
+                      value={
+                        selectedCategory
+                          ? {
+                              value: selectedCategoryId,
+                              label: selectedCategory.name,
+                            }
+                          : null
+                      }
+                      onChange={(option) =>
+                        setSelectedCategoryId(option?.value || "")
+                      }
+                      options={categoryTypes.map((cat) => ({
+                        value: cat.id,
+                        label: cat.name,
+                      }))}
                       placeholder="Select Category Type"
                       className="basic-select"
                       classNamePrefix="select"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Course
+                    </label>
                     <ReactSelect
-                      value={selectedCourse ? { value: selectedCourseId, label: selectedCourse.title } : null}
-                      onChange={(option) => setSelectedCourseId(option?.value || "")}
-                      options={filteredCourses.map(course => ({ value: course.id, label: course.title }))}
+                      value={
+                        selectedCourse
+                          ? {
+                              value: selectedCourseId,
+                              label: selectedCourse.title,
+                            }
+                          : null
+                      }
+                      onChange={(option) =>
+                        setSelectedCourseId(option?.value || "")
+                      }
+                      options={filteredCourses.map((course) => ({
+                        value: course.id,
+                        label: course.title,
+                      }))}
                       placeholder="Select Course"
                       className="basic-select"
                       classNamePrefix="select"
@@ -493,18 +560,39 @@ const CourseMaterialManagement: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
                     <ReactSelect
-                      value={categories.find(cat => cat.id === form.categoryId) ? { value: form.categoryId, label: categories.find(cat => cat.id === form.categoryId)?.name } : null}
-                      onChange={option => setForm(prev => ({ ...prev!, categoryId: option?.value || "" }))}
-                      options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                      value={
+                        categories.find((cat) => cat.id === form.categoryId)
+                          ? {
+                              value: form.categoryId,
+                              label: categories.find(
+                                (cat) => cat.id === form.categoryId
+                              )?.name,
+                            }
+                          : null
+                      }
+                      onChange={(option) =>
+                        setForm((prev) => ({
+                          ...prev!,
+                          categoryId: option?.value || "",
+                        }))
+                      }
+                      options={categories.map((cat) => ({
+                        value: cat.id,
+                        label: cat.name,
+                      }))}
                       placeholder="Select Category"
                       isDisabled={!selectedCategoryId}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Title
+                    </label>
                     <input
                       type="text"
                       name="title"
@@ -519,7 +607,9 @@ const CourseMaterialManagement: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fees</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fees
+                    </label>
                     <input
                       type="number"
                       name="fees"
@@ -527,11 +617,13 @@ const CourseMaterialManagement: React.FC = () => {
                       onChange={handleChange}
                       placeholder="Enter fees"
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      required
+                      
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
                     <textarea
                       name="description"
                       value={form.description || ""}
@@ -545,7 +637,9 @@ const CourseMaterialManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Media</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Media
+                  </label>
                   <div className="flex items-center gap-4">
                     <div className="w-24 h-24 border rounded-md flex items-center justify-center bg-gray-50">
                       {form.id && form.media?.path ? (
@@ -571,7 +665,9 @@ const CourseMaterialManagement: React.FC = () => {
                         required={!form.id}
                       />
                       {mediaFile && (
-                        <p className="mt-2 text-sm text-gray-500">{mediaFile.name}</p>
+                        <p className="mt-2 text-sm text-gray-500">
+                          {mediaFile.name}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -592,11 +688,13 @@ const CourseMaterialManagement: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={submitting || !selectedCategoryId || !selectedCourseId}
+                    disabled={
+                      submitting || !selectedCategoryId || !selectedCourseId
+                    }
                     className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
                       submitting || !selectedCategoryId || !selectedCourseId
-                        ? 'bg-indigo-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
+                        ? "bg-indigo-400 cursor-not-allowed"
+                        : "bg-indigo-600 hover:bg-indigo-700"
                     }`}
                   >
                     {submitting ? "Saving..." : "Save"}
